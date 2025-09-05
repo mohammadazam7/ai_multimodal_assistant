@@ -29,5 +29,4 @@ A full-stack AI assistant featuring computer vision, natural language processing
 - Real-time status updates
 - Responsive design
 - Camera object detection
-- 3D visualization
 ### Project Structure
