@@ -121,7 +121,7 @@ function App() {
         video: { width: 640, height: 480 } 
       });
       
-      // Connect stream to video element
+      // Connect stream to video element and then play
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
         setCameraActive(true);
