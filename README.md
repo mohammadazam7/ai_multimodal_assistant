@@ -31,10 +31,3 @@ A full-stack AI assistant featuring computer vision, natural language processing
 - Real-time status updates
 - Responsive design
 ### Project Structure
-
-**structure of the project**
-- reademe
-- frontend
-- backend
-- venv
-- gitigore
