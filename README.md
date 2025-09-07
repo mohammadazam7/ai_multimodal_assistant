@@ -31,5 +31,4 @@ A full-stack AI assistant featuring computer vision, natural language processing
 - Real-time status updates
 - Responsive design
 ### Project Structure
-
-- the design of tthe
+- the design of the project
