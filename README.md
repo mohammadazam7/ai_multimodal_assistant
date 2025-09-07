@@ -22,6 +22,8 @@ A full-stack AI assistant featuring computer vision, natural language processing
 - Python 3.9+ with AI libraries
 - PyTorch 2.8.0+cpu for machine learning
 - OpenCV 4.12.0 for computer vision
+- Docker
+- Transformer
 
 **Frontend:**
 - React 18+ with modern hooks
@@ -29,3 +31,10 @@ A full-stack AI assistant featuring computer vision, natural language processing
 - Real-time status updates
 - Responsive design
 ### Project Structure
+
+**structure of the project**
+- reademe
+- frontend
+- backend
+- venv
+- gitigore
