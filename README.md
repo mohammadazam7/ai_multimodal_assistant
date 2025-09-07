@@ -31,4 +31,5 @@ A full-stack AI assistant featuring computer vision, natural language processing
 - Real-time status updates
 - Responsive design
 ### Project Structure
-- the structure of the project is based on the project of the multimidal ai and the project is based on the camera
+
+- the design of tthe
