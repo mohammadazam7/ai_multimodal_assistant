@@ -15,33 +15,20 @@ app = FastAPI()
 # CORS Configuration - allows frontend to communicate
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],  # React dev server
+    allow_origins=["http://localhost:3000"],  
     allow_credentials=True,
-    allow_methods=["*"],    # Allow all HTTP methods
-    allow_headers=["*"],    # Allow all headers
+    allow_methods=["*"],    
+    allow_headers=["*"],    
 )
 
 # Global variable to store YOLO model
 yolo_model = None
 
 def initialize_yolo():
-    """
-    Initialize YOLO model for object detection
-    
-    What this does:
-    - Downloads pre-trained YOLO model (trained on millions of images)
-    - Loads it into memory for fast inference
-    - This model can detect 80 different object types
-    
-    Why we do this:
-    - YOLO is state-of-the-art object detection
-    - Pre-trained means we don't need to train it ourselves
-    - Can detect specific objects like "person", "car", "dog", etc.
-    """
+    """Initialize YOLO model for advanced object detection"""
     global yolo_model
     try:
-        # Load YOLOv8 nano model (smallest, fastest version)
-        # 'yolov8n.pt' will be downloaded automatically first time
+        # Load YOLOv8 nano model (will download automatically first time)
         yolo_model = YOLO('yolov8n.pt')
         print("✅ YOLO model loaded successfully")
         return True
@@ -50,21 +37,7 @@ def initialize_yolo():
         return False
 
 def detect_objects_yolo(image):
-    """
-    Advanced object detection using YOLO
-    
-    Process:
-    1. Convert PIL image to format YOLO understands
-    2. Run YOLO inference (AI prediction)
-    3. Extract object names and confidence scores
-    4. Return list of detected objects
-    
-    Args:
-        image: PIL Image object from camera
-    
-    Returns:
-        list: Detected objects with confidence scores
-    """
+    """Advanced object detection using YOLO"""
     global yolo_model
     
     # Fallback to simple detection if YOLO fails
@@ -76,44 +49,31 @@ def detect_objects_yolo(image):
         img_array = np.array(image)
         
         # Run YOLO inference
-        # verbose=False: Don't print debug information
         results = yolo_model(img_array, verbose=False)
         
         detected_objects = []
         
         # Process YOLO results
         for result in results:
-            # result.boxes contains detection information
             if result.boxes is not None:
                 for box in result.boxes:
-                    # Get class ID (what object type)
+                    # Get class ID and confidence
                     class_id = int(box.cls[0])
-                    
-                    # Get confidence score (how sure the AI is)
                     confidence = float(box.conf[0])
                     
                     # Only include high-confidence detections
                     if confidence > 0.5:  # 50% confidence threshold
-                        # Get object name from class ID
                         object_name = yolo_model.names[class_id]
-                        
-                        # Add confidence percentage to object name
                         detected_objects.append(f"{object_name} ({confidence:.1%})")
         
-        # Return detected objects or fallback message
         return detected_objects if detected_objects else ["No objects detected"]
         
     except Exception as e:
         print(f"YOLO detection failed: {e}")
-        # Fallback to simple edge detection
         return detect_objects_simple(image)
 
 def detect_objects_simple(image):
-    """
-    Simple object detection using OpenCV edge detection (backup method)
-    
-    This is our fallback when YOLO isn't available
-    """
+    """Simple object detection using OpenCV (backup method)"""
     opencv_image = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR)
     gray = cv2.cvtColor(opencv_image, cv2.COLOR_BGR2GRAY)
     edges = cv2.Canny(gray, 50, 150)
@@ -132,20 +92,7 @@ def detect_objects_simple(image):
 # Initialize YOLO when server starts
 @app.on_event("startup")
 async def startup_event():
-    """
-    Run this function when the server starts
-    
-    What happens:
-    - Server boots up
-    - Attempts to load YOLO model
-    - If successful: advanced object detection available
-    - If failed: falls back to simple edge detection
-    
-    Why we do this:
-    - Loading AI models takes time
-    - Better to load once at startup than every request
-    - Graceful fallback if YOLO installation fails
-    """
+    """Load YOLO model when server starts"""
     print("🚀 Starting AI Assistant Backend...")
     print("📦 Loading YOLO model...")
     
@@ -195,14 +142,7 @@ def test_ai():
 
 @app.get("/ai/capabilities")
 def get_capabilities():
-    """
-    Return what objects the AI can detect
-    
-    Why this is useful:
-    - Frontend can show users what to expect
-    - Helps with testing (point camera at known objects)
-    - Educational - shows AI's knowledge scope
-    """
+    """Return what objects the AI can detect"""
     global yolo_model
     
     if yolo_model:
@@ -229,22 +169,9 @@ def get_capabilities():
 
 @app.post("/ai/analyze-frame")
 def analyze_frame(request: dict):
-    """
-    Analyze camera frame for object detection
-    
-    Enhanced Process:
-    1. Receive base64 image from frontend
-    2. Decode to PIL Image
-    3. Run YOLO object detection (or fallback to simple)
-    4. Return detailed analysis with object names and confidence
-    
-    What's new:
-    - Specific object identification instead of just "objects detected"
-    - Confidence scores for each detection
-    - More detailed analysis results
-    """
+    """Analyze camera frame for object detection"""
     try:
-        # Extract and decode image (same as before)
+        # Extract and decode image
         image_data = request.get("image", "")
         
         if "base64," in image_data:
@@ -274,23 +201,6 @@ def analyze_frame(request: dict):
             "message": f"Analysis failed: {str(e)}",
             "detection_method": "error"
         }
-
-# Additional endpoint for real-time streaming (future enhancement)
-@app.post("/ai/analyze-stream")
-def analyze_stream(request: dict):
-    """
-    Future endpoint for continuous video stream analysis
-    
-    This will enable:
-    - Real-time object tracking
-    - Motion detection
-    - Multiple frame analysis for better accuracy
-    """
-    # Placeholder for future implementation
-    return {
-        "status": "not_implemented",
-        "message": "Stream analysis coming in next version"
-    }
 
 # To run: 
 # pip install ultralytics
