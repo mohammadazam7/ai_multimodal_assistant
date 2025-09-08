@@ -257,43 +257,6 @@ def analyze_frame(request: dict):
         detected_objects = detect_objects_yolo(image)
         
         # Enhanced response with more information
-        return   {
-            "detection_method": "Simple Edge Detection",
-            "total_classes": 3,
-            "objects": ["Simple Scene", "Objects Detected", "Complex Scene"],
-            "note": "Install ultralytics for advanced object detection"
-        }
-
-@app.post("/ai/analyze-frame")
-def analyze_frame(request: dict):
-    """
-    Analyze camera frame for object detection
-    
-    Enhanced Process:
-    1. Receive base64 image from frontend
-    2. Decode to PIL Image
-    3. Run YOLO object detection (or fallback to simple)
-    4. Return detailed analysis with object names and confidence
-    
-    What's new:
-    - Specific object identification instead of just "objects detected"
-    - Confidence scores for each detection
-    - More detailed analysis results
-    """
-    try:
-        # Extract and decode image (same as before)
-        image_data = request.get("image", "")
-        
-        if "base64," in image_data:
-            image_data = image_data.split("base64,")[1]
-        
-        image_bytes = base64.b64decode(image_data)
-        image = Image.open(io.BytesIO(image_bytes))
-        
-        # Perform advanced object detection
-        detected_objects = detect_objects_yolo(image)
-        
-        # Enhanced response with more information
         return {
             "status": "success",
             "objects": detected_objects,
