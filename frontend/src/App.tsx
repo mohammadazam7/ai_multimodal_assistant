@@ -4,7 +4,7 @@ import { Box, OrbitControls, Text, Sphere } from '@react-three/drei';
 import axios from 'axios';
 import './App.css';
 
-// Enhanced interface for AI responses with new fields
+// TypeScript interface defining the structure of AI responses
 interface AIResponse {
   message?: string;
   response?: string;
@@ -19,18 +19,15 @@ interface AIResponse {
   object_count?: number;
 }
 
-// Enhanced rotating cube with more complex animation
+// 3D Cube Component - displays a rotating pink cube in the scene
 function RotatingCube() {
   const meshRef = useRef<any>(null);
   
   useFrame((state, delta) => {
     if (meshRef.current) {
-      // More complex rotation patterns
       meshRef.current.rotation.x += delta;
       meshRef.current.rotation.y += delta * 0.5;
       meshRef.current.rotation.z += delta * 0.25;
-      
-      // Subtle floating animation
       meshRef.current.position.y = Math.sin(state.clock.elapsedTime) * 0.1;
     }
   });
@@ -46,7 +43,7 @@ function RotatingCube() {
   );
 }
 
-// New component for displaying detected objects as 3D spheres
+// Component for displaying detected objects as 3D spheres
 function DetectedObjectSphere({ object, position, index }: { 
   object: string, 
   position: [number, number, number], 
@@ -56,10 +53,7 @@ function DetectedObjectSphere({ object, position, index }: {
   
   useFrame((state, delta) => {
     if (meshRef.current) {
-      // Individual rotation for each object sphere
       meshRef.current.rotation.y += delta * (0.5 + index * 0.1);
-      
-      // Pulsing effect based on object confidence
       const scale = 1 + Math.sin(state.clock.elapsedTime + index) * 0.1;
       meshRef.current.scale.setScalar(scale);
     }
@@ -88,7 +82,6 @@ function DetectedObjectSphere({ object, position, index }: {
 
 // Main Application Component
 function App() {
-  // Enhanced state management
   const [aiResponse, setAiResponse] = useState<string>('AI Assistant Ready');
   const [connectionStatus, setConnectionStatus] = useState<string>('Checking...');
   const [aiStatus, setAiStatus] = useState<AIResponse | null>(null);
@@ -102,14 +95,12 @@ function App() {
   
   const videoRef = useRef<HTMLVideoElement>(null);
 
-  // Initialize app
   useEffect(() => {
     checkConnection();
     getAIStatus();
     getCapabilities();
   }, []);
 
-  // Auto-analysis effect
   useEffect(() => {
     let interval: NodeJS.Timeout;
     
@@ -124,7 +115,6 @@ function App() {
     };
   }, [autoAnalysis, cameraActive]);
 
-  // Enhanced API communication functions
   const checkConnection = async () => {
     try {
       const response = await axios.get('http://localhost:8000/');
@@ -144,7 +134,6 @@ function App() {
     }
   };
 
-  // New function to get AI capabilities
   const getCapabilities = async () => {
     try {
       const response = await axios.get('http://localhost:8000/ai/capabilities');
@@ -170,7 +159,6 @@ function App() {
     }
   };
 
-  // Enhanced frame analysis with more detailed results
   const analyzeFrame = async () => {
     if (!videoRef.current || !cameraActive) return;
 
@@ -187,7 +175,6 @@ function App() {
         image: imageData
       });
       
-      // Enhanced state updates
       setDetectedObjects(response.data.objects || []);
       setObjectCount(response.data.object_count || 0);
       setDetectionMethod(response.data.detection_method || 'Unknown');
@@ -195,10 +182,9 @@ function App() {
       const resultText = response.data.objects?.join(', ') || 'Nothing';
       setAiResponse(`Detected: ${resultText}`);
       
-      // Add to analysis history
       setAnalysisHistory(prev => {
         const newHistory = [`${new Date().toLocaleTimeString()}: ${resultText}`, ...prev];
-        return newHistory.slice(0, 5); // Keep last 5 analyses
+        return newHistory.slice(0, 5);
       });
       
     } catch (error) {
@@ -224,14 +210,12 @@ function App() {
     }
   };
 
-  // New function to test specific object detection
   const showCapabilities = () => {
     if (capabilities.length > 0) {
       setAiResponse(`Can detect: ${capabilities.slice(0, 10).join(', ')}... and ${capabilities.length - 10} more`);
     }
   };
 
-  // Calculate 3D positions for detected objects in a circle
   const getObjectPosition = (index: number, total: number): [number, number, number] => {
     const radius = 4;
     const angle = (index / total) * Math.PI * 2;
@@ -244,7 +228,6 @@ function App() {
 
   return (
     <div style={{ width: '100vw', height: '100vh', background: 'black' }}>
-      {/* Enhanced camera feed with status indicator */}
       <video 
         ref={videoRef}
         autoPlay 
@@ -262,7 +245,6 @@ function App() {
         }}
       />
 
-      {/* Enhanced control panel */}
       <div style={{ 
         position: 'absolute', 
         top: 10, 
@@ -281,7 +263,6 @@ function App() {
           AI Assistant Control Center
         </h1>
         
-        {/* Status indicators */}
         <div style={{ marginBottom: '15px' }}>
           <p style={{ margin: '5px 0', color: connectionStatus.includes('Connected') ? '#00ff00' : '#ff0000' }}>
             🔗 Status: {connectionStatus}
@@ -292,7 +273,6 @@ function App() {
           <p style={{ margin: '5px 0' }}>📊 Objects: {objectCount}</p>
         </div>
         
-        {/* AI Response */}
         <div style={{ 
           background: 'rgba(0, 255, 255, 0.1)', 
           padding: '10px', 
@@ -305,7 +285,6 @@ function App() {
           </p>
         </div>
         
-        {/* Enhanced AI system info */}
         {aiStatus && (
           <div style={{ marginBottom: '15px', fontSize: '12px', color: '#aaa' }}>
             <p>⚡ PyTorch: {aiStatus.pytorch}</p>
@@ -317,7 +296,6 @@ function App() {
           </div>
         )}
         
-        {/* Enhanced button controls */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px' }}>
           <button onClick={testAI} style={buttonStyle('#ff1493')}>
             🧪 Test AI
@@ -352,7 +330,6 @@ function App() {
           </button>
         </div>
         
-        {/* Analysis History */}
         {analysisHistory.length > 0 && (
           <div style={{ marginTop: '15px' }}>
             <h4 style={{ color: '#00ffff', margin: '0 0 10px 0' }}>📝 Recent Analysis:</h4>
@@ -367,18 +344,14 @@ function App() {
         )}
       </div>
       
-      {/* Enhanced 3D Scene */}
       <Canvas camera={{ position: [0, 2, 8], fov: 60 }}>
-        {/* Enhanced lighting */}
         <ambientLight intensity={0.6} />
         <pointLight position={[10, 10, 10]} intensity={1.2} />
         <pointLight position={[-10, -10, -10]} intensity={0.8} color="#4080ff" />
         
-        {/* Main rotating cube */}
         <RotatingCube />
         <OrbitControls enableDamping dampingFactor={0.05} />
         
-        {/* Main AI response text */}
         <Text
           position={[0, 3, 0]}
           fontSize={0.4}
@@ -390,7 +363,6 @@ function App() {
           {aiResponse}
         </Text>
 
-        {/* Status text */}
         <Text
           position={[0, -2.5, 0]}
           fontSize={0.25}
@@ -401,7 +373,6 @@ function App() {
           {detectionMethod} - {objectCount} objects detected
         </Text>
 
-        {/* Enhanced object visualization with spheres */}
         {detectedObjects.map((object, index) => (
           <DetectedObjectSphere
             key={`${object}-${index}`}
@@ -411,7 +382,6 @@ function App() {
           />
         ))}
 
-        {/* Background particles effect */}
         {Array.from({ length: 20 }).map((_, index) => (
           <Sphere
             key={`particle-${index}`}
@@ -430,7 +400,6 @@ function App() {
   );
 }
 
-// Helper function for consistent button styling
 const buttonStyle = (backgroundColor: string) => ({
   padding: '8px 12px',
   background: backgroundColor,
