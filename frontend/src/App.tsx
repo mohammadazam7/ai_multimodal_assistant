@@ -118,3 +118,53 @@ function AICore() {
           opacity={0.6}
         />
       </Ring>
+      {/* Energy particles */}
+      {Array.from({ length: 30 }).map((_, i) => (
+        <EnergyParticle key={i} index={i} />
+      ))}
+    </group>
+  );
+}
+
+// Floating energy particles
+function EnergyParticle({ index }: { index: number }) {
+  const particleRef = useRef<THREE.Mesh>(null);
+  const radius = 6 + Math.random() * 4;
+  const speed = 0.3 + Math.random() * 0.7;
+  const height = (Math.random() - 0.5) * 8;
+  
+  useFrame((state) => {
+    if (particleRef.current) {
+      const time = state.clock.elapsedTime * speed + index;
+      particleRef.current.position.x = Math.cos(time) * radius;
+      particleRef.current.position.y = height + Math.sin(time * 0.5) * 2;
+      particleRef.current.position.z = Math.sin(time) * radius;
+      
+      // Particle glow effect
+      const opacity = 0.3 + Math.sin(state.clock.elapsedTime * 3 + index) * 0.3;
+      if (particleRef.current.material) {
+        (particleRef.current.material as THREE.MeshBasicMaterial).opacity = opacity;
+      }
+    }
+  });
+  
+  return (
+    <Sphere ref={particleRef} args={[0.08]} position={[0, 0, 0]}>
+      <meshBasicMaterial 
+        color={`hsl(${180 + index * 10}, 100%, 70%)`}
+        transparent
+        opacity={0.6}
+      />
+    </Sphere>
+  );
+}
+
+// Holographic detection display
+function HolographicDisplay({ 
+  objects, 
+  position 
+}: { 
+  objects: string[]; 
+  position: [number, number, number] 
+}) {
+  const displayRef = useRef<THREE.Group>(null);
