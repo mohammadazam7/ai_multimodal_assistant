@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { 
@@ -455,3 +456,484 @@ function App() {
 
   const testConnection = async () => {
     setIsAnalyzing(true);
+    try {
+      const response = await axios.get('http://localhost:8000/ai/test');
+      setAiResponse(response.data.response || 'Connection Test Successful');
+    } catch (error) {
+      setAiResponse('Connection Test Failed - Check Backend');
+    }
+    setIsAnalyzing(false);
+  };
+
+  // Calculate positions for detection nodes
+  const getNodePosition = (index: number, total: number): [number, number, number] => {
+    const radius = 10;
+    const angle = (index / Math.max(total, 1)) * Math.PI * 2;
+    const height = Math.sin(index * 0.8) * 3;
+    return [
+      Math.cos(angle) * radius,
+      height,
+      Math.sin(angle) * radius
+    ];
+  };
+
+  return (
+    <div style={{ 
+      width: '100vw', 
+      height: '100vh', 
+      background: 'linear-gradient(135deg, #0a0a23 0%, #1a1a3a 50%, #0f0f2a 100%)',
+      overflow: 'hidden',
+      fontFamily: "'Orbitron', 'Courier New', monospace"
+    }}>
+      
+      {/* Premium Camera Interface */}
+      <div style={{
+        position: 'absolute',
+        top: '20px',
+        right: '20px',
+        width: '420px',
+        height: '320px',
+        background: 'linear-gradient(145deg, rgba(0,40,80,0.95), rgba(0,60,120,0.9))',
+        border: '3px solid',
+        borderColor: cameraActive ? '#00ffff' : '#555',
+        borderRadius: '25px',
+        overflow: 'hidden',
+        backdropFilter: 'blur(20px)',
+        boxShadow: cameraActive 
+          ? '0 0 50px rgba(0,255,255,0.7), inset 0 0 30px rgba(0,255,255,0.1)' 
+          : '0 0 30px rgba(0,0,0,0.8)',
+        transition: 'all 0.3s ease'
+      }}>
+        {/* Camera header */}
+        <div style={{
+          padding: '15px',
+          background: 'linear-gradient(90deg, rgba(0,255,255,0.2), rgba(0,255,255,0.05))',
+          borderBottom: '2px solid rgba(0,255,255,0.3)',
+          fontFamily: 'monospace',
+          fontSize: '14px',
+          color: '#00ffff',
+          textAlign: 'center',
+          fontWeight: 'bold',
+          letterSpacing: '2px'
+        }}>
+          🔭 QUANTUM VISUAL SENSOR ARRAY
+        </div>
+        
+        {/* Video display */}
+        <div style={{ position: 'relative', height: 'calc(100% - 60px)' }}>
+          <video 
+            ref={videoRef}
+            autoPlay 
+            playsInline
+            muted
+            style={{
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+              display: cameraActive ? 'block' : 'none'
+            }}
+          />
+          
+          {!cameraActive && (
+            <div style={{ 
+              height: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexDirection: 'column',
+              color: '#00aaff', 
+              textAlign: 'center',
+              fontFamily: 'monospace'
+            }}>
+              <div style={{ fontSize: '48px', marginBottom: '20px', opacity: 0.6 }}>📡</div>
+              <div style={{ fontSize: '16px', fontWeight: 'bold' }}>VISUAL SENSORS</div>
+              <div style={{ fontSize: '12px', opacity: 0.8 }}>OFFLINE</div>
+            </div>
+          )}
+          
+          {/* Analysis overlay */}
+          {isAnalyzing && (
+            <div style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              background: 'rgba(0,255,255,0.1)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: '#00ffff',
+              fontSize: '18px',
+              fontWeight: 'bold'
+            }}>
+              🔄 ANALYZING...
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Advanced Control Panel */}
+      <div style={{
+        position: 'absolute',
+        top: '20px',
+        left: '20px',
+        background: 'linear-gradient(135deg, rgba(0,20,50,0.98), rgba(0,50,100,0.95))',
+        border: '3px solid #00aaff',
+        borderRadius: '30px',
+        padding: '35px',
+        fontFamily: 'monospace',
+        color: '#00ffff',
+        backdropFilter: 'blur(25px)',
+        boxShadow: '0 0 80px rgba(0,170,255,0.5), inset 0 0 40px rgba(0,255,255,0.1)',
+        minWidth: '450px',
+        maxHeight: '85vh',
+        overflowY: 'auto'
+      }}>
+        {/* Header */}
+        <div style={{ 
+          textAlign: 'center',
+          marginBottom: '30px',
+          borderBottom: '3px solid #00ffff',
+          paddingBottom: '20px'
+        }}>
+          <h1 style={{ 
+            margin: '0',
+            fontSize: '24px',
+            textShadow: '0 0 15px #00ffff',
+            letterSpacing: '3px',
+            fontWeight: 'bold'
+          }}>
+            🧠 AI NEURAL COMMAND CENTER
+          </h1>
+          <div style={{ 
+            fontSize: '12px', 
+            marginTop: '8px', 
+            opacity: 0.8,
+            letterSpacing: '1px'
+          }}>
+            QUANTUM PROCESSING ENABLED
+          </div>
+        </div>
+        
+        {/* Status Grid */}
+        <div style={{ 
+          display: 'grid', 
+          gridTemplateColumns: '1fr 1fr', 
+          gap: '20px',
+          marginBottom: '30px',
+          fontSize: '13px'
+        }}>
+          <div style={{ 
+            background: 'rgba(0,255,255,0.1)', 
+            padding: '15px', 
+            borderRadius: '15px',
+            border: '1px solid rgba(0,255,255,0.3)'
+          }}>
+            <div style={{ color: '#88ffff', marginBottom: '8px', fontWeight: 'bold' }}>NEURAL LINK</div>
+            <div style={{ 
+              color: connectionStatus.includes('Active') ? '#00ff00' : '#ff4444',
+              fontSize: '11px',
+              wordBreak: 'break-word'
+            }}>
+              {connectionStatus}
+            </div>
+          </div>
+          
+          <div style={{ 
+            background: 'rgba(0,255,255,0.1)', 
+            padding: '15px', 
+            borderRadius: '15px',
+            border: '1px solid rgba(0,255,255,0.3)'
+          }}>
+            <div style={{ color: '#88ffff', marginBottom: '8px', fontWeight: 'bold' }}>DETECTION MODE</div>
+            <div style={{ color: '#ffffff', fontSize: '11px' }}>
+              {detectionMethod}
+            </div>
+          </div>
+          
+          <div style={{ 
+            background: 'rgba(0,255,255,0.1)', 
+            padding: '15px', 
+            borderRadius: '15px',
+            border: '1px solid rgba(0,255,255,0.3)'
+          }}>
+            <div style={{ color: '#88ffff', marginBottom: '8px', fontWeight: 'bold' }}>VISUAL STATUS</div>
+            <div style={{ 
+              color: cameraActive ? '#00ff00' : '#ff4444',
+              fontSize: '11px',
+              fontWeight: 'bold'
+            }}>
+              {cameraActive ? 'SENSORS ONLINE' : 'SENSORS OFFLINE'}
+            </div>
+          </div>
+          
+          <div style={{ 
+            background: 'rgba(0,255,255,0.1)', 
+            padding: '15px', 
+            borderRadius: '15px',
+            border: '1px solid rgba(0,255,255,0.3)'
+          }}>
+            <div style={{ color: '#88ffff', marginBottom: '8px', fontWeight: 'bold' }}>AUTO ANALYSIS</div>
+            <div style={{ 
+              color: autoAnalysis ? '#ffaa00' : '#8888ff',
+              fontSize: '11px',
+              fontWeight: 'bold'
+            }}>
+              {autoAnalysis ? 'AUTONOMOUS MODE' : 'MANUAL MODE'}
+            </div>
+          </div>
+        </div>
+
+        {/* Neural Response Display */}
+        <div style={{
+          background: 'linear-gradient(135deg, rgba(0,255,255,0.15), rgba(0,255,255,0.05))',
+          border: '2px solid rgba(0,255,255,0.4)',
+          borderRadius: '20px',
+          padding: '25px',
+          marginBottom: '30px',
+          textAlign: 'center',
+          position: 'relative',
+          overflow: 'hidden'
+        }}>
+          <div style={{ 
+            fontSize: '12px', 
+            color: '#88ffff', 
+            marginBottom: '12px',
+            fontWeight: 'bold',
+            letterSpacing: '1px'
+          }}>
+            NEURAL RESPONSE MATRIX
+          </div>
+          <div style={{ 
+            fontSize: '14px', 
+            lineHeight: '1.6',
+            minHeight: '40px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}>
+            {aiResponse}
+          </div>
+          {objectCount > 0 && (
+            <div style={{ 
+              fontSize: '12px', 
+              marginTop: '15px', 
+              color: '#00ff88',
+              fontWeight: 'bold',
+              padding: '8px',
+              background: 'rgba(0,255,136,0.1)',
+              borderRadius: '10px'
+            }}>
+              {objectCount} QUANTUM ENTITIES DETECTED
+            </div>
+          )}
+          
+          {/* Animated scanning line */}
+          <div style={{
+            position: 'absolute',
+            top: 0,
+            left: '-100%',
+            width: '100%',
+            height: '2px',
+            background: 'linear-gradient(90deg, transparent, #00ffff, transparent)',
+            animation: isAnalyzing ? 'scan 2s linear infinite' : 'none'
+          }} />
+        </div>
+
+        {/* Control Buttons */}
+        <div style={{ 
+          display: 'grid', 
+          gridTemplateColumns: 'repeat(2, 1fr)', 
+          gap: '15px',
+          marginBottom: '25px'
+        }}>
+          <button 
+            onClick={cameraActive ? stopCamera : startCamera}
+            style={ultraButtonStyle(cameraActive ? '#ff4400' : '#00ff88', true)}
+            disabled={isAnalyzing}
+          >
+            {cameraActive ? '⏹ DEACTIVATE SENSORS' : '📡 ACTIVATE SENSORS'}
+          </button>
+          
+          <button 
+            onClick={analyzeFrame}
+            disabled={!cameraActive || isAnalyzing}
+            style={ultraButtonStyle('#0088ff', cameraActive && !isAnalyzing)}
+          >
+            ⚡ NEURAL SCAN
+          </button>
+          
+          <button 
+            onClick={toggleAutoAnalysis}
+            disabled={!cameraActive}
+            style={ultraButtonStyle(autoAnalysis ? '#ff8800' : '#8800ff', cameraActive)}
+          >
+            {autoAnalysis ? '⏸ DISABLE AUTO' : '▶ ENABLE AUTO'}
+          </button>
+          
+          <button 
+            onClick={testConnection}
+            style={ultraButtonStyle('#ff0088', true)}
+            disabled={isAnalyzing}
+          >
+            🔄 SYSTEM CHECK
+          </button>
+        </div>
+
+        {/* System Information */}
+        {aiStatus && (
+          <div style={{ 
+            fontSize: '11px', 
+            color: '#888',
+            borderTop: '2px solid rgba(0,255,255,0.2)',
+            paddingTop: '20px',
+            background: 'rgba(0,0,0,0.2)',
+            padding: '15px',
+            borderRadius: '15px'
+          }}>
+            <div style={{ marginBottom: '8px', color: '#00aaff', fontWeight: 'bold' }}>SYSTEM DIAGNOSTICS</div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+              <div>PyTorch: {aiStatus.pytorch}</div>
+              <div>OpenCV: {aiStatus.opencv}</div>
+              <div>YOLO: {aiStatus.yolo_available ? 'Available' : 'Not Available'}</div>
+              {aiStatus.detection_classes && (
+                <div>Classes: {aiStatus.detection_classes}</div>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Premium 3D Scene */}
+      <Canvas 
+        camera={{ position: [0, 10, 20], fov: 60 }}
+        style={{ background: 'transparent' }}
+        gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}
+      >
+        {/* Enhanced lighting setup */}
+        <ambientLight intensity={0.2} />
+        <pointLight position={[20, 20, 20]} intensity={2.5} color="#ffffff" />
+        <pointLight position={[-20, -20, -20]} intensity={2} color="#0080ff" />
+        <pointLight position={[0, 0, 25]} intensity={1.8} color="#ff0080" />
+        <spotLight 
+          position={[0, 30, 0]} 
+          intensity={1.5} 
+          angle={Math.PI / 4} 
+          penumbra={0.3}
+          color="#00ffff"
+          castShadow
+        />
+        
+        {/* Animated background */}
+        <AnimatedBackground />
+        
+        {/* Central AI Core */}
+        <AICore />
+        
+        {/* Enhanced camera controls */}
+        <OrbitControls 
+          enableDamping 
+          dampingFactor={0.02}
+          enableZoom={true}
+          enablePan={true}
+          autoRotate={true}
+          autoRotateSpeed={0.2}
+          minDistance={12}
+          maxDistance={50}
+          maxPolarAngle={Math.PI * 0.8}
+        />
+        
+        {/* Main system status display */}
+        <Text
+          position={[0, 15, 0]}
+          fontSize={1}
+          color="#00ffff"
+          anchorX="center"
+          anchorY="middle"
+          maxWidth={25}
+          textAlign="center"
+        >
+          {detectionMethod.toUpperCase()}
+        </Text>
+
+        {/* Detection nodes */}
+        {detectedObjects.map((object, index) => (
+          <DetectionNode
+            key={`${object}-${index}`}
+            object={object}
+            position={getNodePosition(index, detectedObjects.length)}
+            index={index}
+          />
+        ))}
+
+        {/* Status display */}
+        <Text
+          position={[0, -12, 0]}
+          fontSize={0.5}
+          color="#88ffff"
+          anchorX="center"
+          anchorY="middle"
+        >
+          {objectCount > 0 
+            ? `${objectCount} QUANTUM ENTITIES DETECTED AND TRACKED`
+            : 'SCANNING QUANTUM ENVIRONMENT...'
+          }
+        </Text>
+        
+        {/* Connection status indicator */}
+        <Text
+          position={[0, -14, 0]}
+          fontSize={0.3}
+          color={connectionStatus.includes('Active') ? '#00ff00' : '#ff4444'}
+          anchorX="center"
+          anchorY="middle"
+        >
+          {connectionStatus.toUpperCase()}
+        </Text>
+      </Canvas>
+      
+      {/* CSS Animations */}
+      <style jsx>{`
+        @keyframes scan {
+          0% { left: -100%; }
+          100% { left: 100%; }
+        }
+        
+        @keyframes pulse {
+          0%, 100% { opacity: 0.5; }
+          50% { opacity: 1; }
+        }
+        
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');
+      `}</style>
+    </div>
+  );
+}
+
+// Ultra-premium button styling
+const ultraButtonStyle = (color: string, enabled: boolean = true) => ({
+  background: enabled 
+    ? `linear-gradient(145deg, ${color}33, ${color}66, ${color}33)`
+    : 'linear-gradient(145deg, #333, #555, #333)',
+  border: `3px solid ${enabled ? color : '#666'}`,
+  color: enabled ? '#ffffff' : '#999',
+  padding: '15px 20px',
+  borderRadius: '18px',
+  cursor: enabled ? 'pointer' : 'not-allowed',
+  fontSize: '12px',
+  fontWeight: 'bold' as const,
+  fontFamily: 'monospace',
+  textTransform: 'uppercase' as const,
+  transition: 'all 0.4s ease',
+  backdropFilter: 'blur(15px)',
+  textShadow: enabled ? `0 0 10px ${color}` : 'none',
+  boxShadow: enabled 
+    ? `0 0 25px ${color}66, inset 0 0 15px ${color}33, 0 5px 15px rgba(0,0,0,0.3)`
+    : '0 0 10px #33333344',
+  letterSpacing: '1px',
+  position: 'relative' as const,
+  overflow: 'hidden' as const
+});
+
+export default App;
