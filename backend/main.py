@@ -21,13 +21,4 @@ app.add_middleware(
 )
 
 # Global variable for YOLO model
-yolo_model = None
-
-def initialize_yolo():
-    """Initialize YOLO model"""
-    global yolo_model
-    try:
-        from ultralytics import YOLO
-        yolo_model = YOLO('yolov8n.pt')
-        print("✅ YOLO model loaded successfully")
-        return True
+yolo_model
