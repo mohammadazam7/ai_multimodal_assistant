@@ -119,39 +119,7 @@ def ai_status():
 def test_ai():
     global yolo_model
     mode = "Advanced YOLO" if yolo_model else "Basic Edge Detection"
-    return {
-        "response": f"AI brain working with {mode}!", 
-        "status": "success"
-    }
-
-@app.get("/ai/capabilities")
-def get_capabilities():
-    global yolo_model
-    
-    if yolo_model:
-        detectable_objects = list(yolo_model.names.values())
-        return {
-            "detection_method": "YOLO v8",
-            "total_classes": len(detectable_objects),
-            "objects": detectable_objects,
-            "examples": [
-                "person", "bicycle", "car", "motorcycle", "airplane",
-                "bus", "train", "truck", "boat", "traffic light",
-                "fire hydrant", "stop sign", "parking meter", "bench",
-                "bird", "cat", "dog", "horse", "sheep", "cow",
-                "elephant", "bear", "zebra", "giraffe", "backpack",
-                "umbrella", "handbag", "tie", "suitcase", "frisbee",
-                "skis", "snowboard", "sports ball", "kite", "baseball bat",
-                "baseball glove", "skateboard", "surfboard", "tennis racket",
-                "bottle", "wine glass", "cup", "fork", "knife",
-                "spoon", "bowl", "banana", "apple", "sandwich",
-                "orange", "broccoli", "carrot", "hot dog", "pizza",
-                "donut", "cake", "chair", "couch", "potted plant",
-                "bed", "dining table", "toilet", "tv", "laptop",
-                "mouse", "remote", "keyboard", "cell phone", "microwave",
-                "oven", "toaster", "sink", "refrigerator", "book",
-                "clock", "scissors", "teddy bear", "hair drier", "toothbrush"
-            ]
+   
         }
     else:
         return {
