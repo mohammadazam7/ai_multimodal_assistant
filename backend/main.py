@@ -77,25 +77,3 @@ def detect_objects_simple(image):
     elif edge_pixels > 5000:
         objects.append("Objects Detected")
     else:
-        objects.append("Simple Scene")
-    
-    return objects
-
-# Initialize YOLO on startup
-@app.on_event("startup")
-async def startup_event():
-    print("🚀 Starting AI Assistant Backend...")
-    success = initialize_yolo()
-    if success:
-        print("✅ Advanced object detection ready")
-    else:
-        print("⚠️ Using simple edge detection")
-
-# API Endpoints
-@app.get("/")
-def health_check():
-    global yolo_model
-    model_status = "YOLO Ready" if yolo_model else "Simple Detection"
-    return {
-        "message": "AI Assistant Backend Online", 
-        "status": "ready",
