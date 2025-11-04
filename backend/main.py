@@ -96,17 +96,4 @@ async def startup_event():
 def health_check():
     global yolo_model
     model_status = "YOLO Ready" if yolo_model else "Simple Detection"
-    return {
-        "message": "AI Assistant Backend Online", 
-        "status": "ready",
-        "detection_mode": model_status
-    }
-
-@app.get("/ai/status")
-def ai_status():
-    global yolo_model
-    return {
-        "pytorch": torch.__version__,
-        "opencv": cv2.__version__,
-        "transformers": transformers.__version__,
-        "cuda": torch.cuda.is_available(),
+   
