@@ -186,12 +186,4 @@ def analyze_frame(request: dict):
         }
         
     except Exception as e:
-        return {
-            "status": "error",
-            "objects": [],
-            "message": f"Analysis failed: {str(e)}",
-            "detection_method": "error"
-        }
-
-if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+      
