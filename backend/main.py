@@ -79,37 +79,6 @@ def detect_objects_simple(image):
     else:
         objects.append("Simple Scene")
     
-    return objects
-
-# Initialize YOLO on startup
-@app.on_event("startup")
-async def startup_event():
-    print("🚀 Starting AI Assistant Backend...")
-    success = initialize_yolo()
-    if success:
-        print("✅ Advanced object detection ready")
-    else:
-        print("⚠️ Using simple edge detection")
-
-# API Endpoints
-@app.get("/")
-def health_check():
-    global yolo_model
-    model_status = "YOLO Ready" if yolo_model else "Simple Detection"
-    return {
-        "message": "AI Assistant Backend Online", 
-        "status": "ready",
-        "detection_mode": model_status
-    }
-
-@app.get("/ai/status")
-def ai_status():
-    global yolo_model
-    return {
-        "pytorch": torch.__version__,
-        "opencv": cv2.__version__,
-        "transformers": transformers.__version__,
-        "cuda": torch.cuda.is_available(),
-        "yolo_available": yolo_model is not None,
-        "d
+    
+  
      
