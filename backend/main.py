@@ -61,50 +61,5 @@ def detect_objects_yolo(image):
         return detected_objects if detected_objects else ["No objects detected"]
         
     except Exception as e:
-        print(f"YOLO detection failed: {e}")
-        return detect_objects_simple(image)
-
-def detect_objects_simple(image):
-    """Simple edge detection fallback"""
-    opencv_image = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR)
-    gray = cv2.cvtColor(opencv_image, cv2.COLOR_BGR2GRAY)
-    edges = cv2.Canny(gray, 50, 150)
-    edge_pixels = np.sum(edges > 0)
-    
-    objects = []
-    if edge_pixels > 10000:
-        objects.append("Complex Scene")
-    elif edge_pixels > 5000:
-        objects.append("Objects Detected")
-    else:
-        objects.append("Simple Scene")
-    
-    return objects
-
-# Initialize YOLO on startup
-@app.on_event("startup")
-async def startup_event():
-    print("🚀 Starting AI Assistant Backend...")
-    success = initialize_yolo()
-    if success:
-        print("✅ Advanced object detection ready")
-    else:
-        print("⚠️ Using simple edge detection")
-
-# API Endpoints
-@app.get("/")
-def health_check():
-    global yolo_model
-    model_status = "YOLO Ready" if yolo_model else "Simple Detection"
-    return {
-        "message": "AI Assistant Backend Online", 
-        "status": "ready",
-        "detection_mode": model_status
-    }
-
-@app.get("/ai/status")
-def ai_status():
-    global yolo_model
-    return
            
   
