@@ -141,13 +141,6 @@ def get_capabilities():
                 "bird", "cat", "dog", "horse", "sheep", "cow",
                 "elephant", "bear", "zebra", "giraffe", "backpack",
                 "umbrella", "handbag", "tie", "suitcase", "frisbee",
-                "skis", "snowboard", "sports ball", "kite", "baseball bat",
-                "baseball glove", "skateboard", "surfboard", "tennis racket",
-                "bottle", "wine glass", "cup", "fork", "knife",
-                "spoon", "bowl", "banana", "apple", "sandwich",
-                "orange", "broccoli", "carrot", "hot dog", "pizza",
-                "donut", "cake", "chair", "couch", "potted plant",
-                "bed", "dining table", "toilet", "tv", "laptop",
-                "mouse", "remote", "keyboard", "cell phone", "microwave",
+                "skis", "snowboard", "sports ball", "kite", "baseball bat"
            
   
