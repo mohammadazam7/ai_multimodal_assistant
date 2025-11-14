@@ -146,14 +146,3 @@ def get_capabilities():
                 "bottle", "wine glass", "cup", "fork", "knife",
                 "spoon", "bowl", "banana", "apple", "sandwich",
                 "orange", "broccoli", "carrot", "hot dog", "pizza",
-                "donut", "cake", "chair", "couch", "potted plant",
-                "bed", "dining table", "toilet", "tv", "laptop",
-                "mouse", "remote", "keyboard", "cell phone", "microwave",
-                "oven", "toaster", "sink", "refrigerator", "book",
-                "clock", "scissors", "teddy bear", "hair drier", "toothbrush"
-            ]
-        }
-    else:
-        return {
-            "detection_method": "Simple Edge Detection",
-            "total_classes": 3,
