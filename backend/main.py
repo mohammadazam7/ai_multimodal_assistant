@@ -117,11 +117,3 @@ def ai_status():
 
 @app.get("/ai/test")
 def test_ai():
-    global yolo_model
-    mode = "Advanced YOLO" if yolo_model else "Basic Edge Detection"
-    return {
-        "response": f"AI brain working with {mode}!", 
-        "status": "success"
-    }
-
-@app.get("/ai/capabilities")
