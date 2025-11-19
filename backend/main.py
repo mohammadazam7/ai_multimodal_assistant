@@ -118,40 +118,7 @@ def health_check():
                 "orange", "broccoli", "carrot", "hot dog", "pizza",
                 "donut", "cake", "chair", "couch", "potted plant",
                 "bed", "dining table", "toilet", "tv", "laptop",
-                "mouse", "remote", "keyboard", "cell phone", "microwave",
-                "oven", "toaster", "sink", "refrigerator", "book",
-                "clock", "scissors", "teddy bear", "hair drier", "toothbrush"
-            ]
-        }
-    else:
-        return {
-            "detection_method": "Simple Edge Detection",
-            "total_classes": 3,
-            "objects": ["Simple Scene", "Objects Detected", "Complex Scene"],
-            "note": "Install ultralytics for advanced object detection"
-        }
-
-@app.post("/ai/analyze-frame")
-def analyze_frame(request: dict):
-    """Analyze camera frame for object detection"""
-    try:
-        image_data = request.get("image", "")
-        
-        if "base64," in image_data:
-            image_data = image_data.split("base64,")[1]
-        
-        image_bytes = base64.b64decode(image_data)
-        image = Image.open(io.BytesIO(image_bytes))
-        
-        detected_objects = detect_objects_yolo(image)
-        
-        return {
-            "status": "success",
-            "objects": detected_objects,
-            "object_count": len(detected_objects),
-            "detection_method": "YOLO v8" if yolo_model else "Edge Detection",
-            "message": f"Analysis complete: {len(detected_objects)} objects found",
-            "image_size": f"{image.width}x{image.height}",
+       h}x{image.height}",
             "timestamp": "real-time"
         }
         
