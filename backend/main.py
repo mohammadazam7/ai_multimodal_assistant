@@ -79,6 +79,55 @@ def detect_objects_simple(image):
     else:
         objects.append("Simple Scene")
     
+    return objects
+
+# Initialize YOLO on startup
+@app.on_event("startup")
+async def startup_event():
+    print("🚀 Starting AI Assistant Backend...")
+    success = initialize_yolo()
+    if success:
+        print("✅ Advanced object detection ready")
+    else:
+        print(⚠️ Using simple edge detection")
+
+# API Endpoints
+@app.get("/")
+def health_check():
+    global yolo_model
+    model_status = "YOLO Ready" if yolo_model else "Simple Detection"
+    return {
+        "message": "AI Assistant Backend Online", 
+        "status": "ready",
+        "detection_mode": model_status
+    }
+
+@app.get("/ai/status")
+def ai_status():
+    global yolo_model
+    return {
+        "pytorch": torch.__version__,
+        "opencv": cv2.__version__,
+        "transformers": transformers.__version__,
+        "cuda": torch.cuda.is_available(),
+        "yolo_available": yolo_model is not None,
+        "detection_classes": len(yolo_model.names) if yolo_model else 0,
+        "message": "AI systems operational"
+    }
+
+@app.get("/ai/test")
+def test_ai():
+    global yolo_model
+    mode = "Advanced YOLO" if yolo_model else "Basic Edge Detection"
+    return {
+        "response": f"AI brain working with {mode}!", 
+        "status": "success"
+    }
+
+@app.get("/ai/capabilities")
+def get_capabilities():
+    global yolo_model
+    
     if yolo_model:
         detectable_objects = list(yolo_model.names.values())
         return {
@@ -99,7 +148,40 @@ def detect_objects_simple(image):
                 "orange", "broccoli", "carrot", "hot dog", "pizza",
                 "donut", "cake", "chair", "couch", "potted plant",
                 "bed", "dining table", "toilet", "tv", "laptop",
-       h}x{image.height}",
+                "mouse", "remote", "keyboard", "cell phone", "microwave",
+                "oven", "toaster", "sink", "refrigerator", "book",
+                "clock", "scissors", "teddy bear", "hair drier", "toothbrush"
+            ]
+        }
+    else:
+        return {
+            "detection_method": "Simple Edge Detection",
+            "total_classes": 3,
+            "objects": ["Simple Scene", "Objects Detected", "Complex Scene"],
+            "note": "Install ultralytics for advanced object detection"
+        }
+
+@app.post("/ai/analyze-frame")
+def analyze_frame(request: dict):
+    """Analyze camera frame for object detection"""
+    try:
+        image_data = request.get("image", "")
+        
+        if "base64," in image_data:
+            image_data = image_data.split("base64,")[1]
+        
+        image_bytes = base64.b64decode(image_data)
+        image = Image.open(io.BytesIO(image_bytes))
+        
+        detected_objects = detect_objects_yolo(image)
+        
+        return {
+            "status": "success",
+            "objects": detected_objects,
+            "object_count": len(detected_objects),
+            "detection_method": "YOLO v8" if yolo_model else "Edge Detection",
+            "message": f"Analysis complete: {len(detected_objects)} objects found",
+            "image_size": f"{image.width}x{image.height}",
             "timestamp": "real-time"
         }
         
