@@ -165,10 +165,4 @@ def get_capabilities():
 def analyze_frame(request: dict):
     """Analyze camera frame for object detection"""
     try:
-        image_data = request.get("image", "")
-        
-        if "base64," in image_data:
-            image_data = image_data.split("base64,")[1]
-        
-        image_bytes = base64.b64decode(image_data)
   
