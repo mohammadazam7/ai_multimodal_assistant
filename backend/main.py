@@ -99,14 +99,7 @@ def ai_status():
     global yolo_model
     return {
         "pytorch": torch.__version__,
-        "opencv": cv2.__version__,
-        "transformers": transformers.__version__,
-        "cuda": torch.cuda.is_available(),
-       
-        
-    except Exception as e:
-        return {
-            "status": "error",
+    ,
             "objects": [],
             "message": f"Analysis failed: {str(e)}",
             "detection_method": "error"
