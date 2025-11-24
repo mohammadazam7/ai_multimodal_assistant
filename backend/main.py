@@ -110,35 +110,7 @@ def ai_status():
         "opencv": cv2.__version__,
         "transformers": transformers.__version__,
         "cuda": torch.cuda.is_available(),
-        "yolo_available": yolo_model is not None,
-        "detection_classes": len(yolo_model.names) if yolo_model else 0,
-        "message": "AI systems operational"
-    }
-
-@app.get("/ai/test")
-def test_ai():
-    global yolo_model
-    mode = "Advanced YOLO" if yolo_model else "Basic Edge Detection"
-    return {
-        "response": f"AI brain working with {mode}!", 
-        "status": "success"
-    }
-
-@app.get("/ai/capabilities")
-def get_capabilities():
-    global yolo_model
-    
-    if yolo_model:
-        detectable_objects = list(yolo_model.names.values())
-        return {
-            "detection_method": "YOLO v8",
-            "total_classes": len(detectable_objects),
-            "objects": detectable_objects,
-            "examples": [
-                "person", "bicycle", "car", "motorcycle", "airplane",
-                "bus", "train", "truck", "boat", "traffic light",
-time"
-        }
+       
         
     except Exception as e:
         return {
