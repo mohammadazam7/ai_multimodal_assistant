@@ -182,16 +182,4 @@ def analyze_frame(request: dict):
             "detection_method": "YOLO v8" if yolo_model else "Edge Detection",
             "message": f"Analysis complete: {len(detected_objects)} objects found",
             "image_size": f"{image.width}x{image.height}",
-            "timestamp": "real-time"
-        }
-        
-    except Exception as e:
-        return {
-            "status": "error",
-            "objects": [],
-            "message": f"Analysis failed: {str(e)}",
-            "detection_method": "error"
-        }
-
-if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8000)" Using simple edge detection")
+  
