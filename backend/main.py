@@ -104,19 +104,4 @@ def health_check():
 
 @app.get("/ai/status")
 def ai_status():
-    global yolo_model
-    return {
-        "pytorch": torch.__version__,
-        "opencv": cv2.__version__,
-        "transformers": transformers.__version__,
-        "cuda": torch.cuda.is_available(),
-        "yolo_available": yolo_model is not None,
-        "detection_classes": len(yolo_model.names) if yolo_model else 0,
-        "message": "AI systems operational"
-    }
-
-@app.get("/ai/test")
-def test_ai():
-    global yolo_model
-    mode = "Advanced YOLO" if yolo_model else "Basic Edge Detection"
-    retu
+  
