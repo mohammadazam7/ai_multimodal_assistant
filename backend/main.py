@@ -171,13 +171,4 @@ def analyze_frame(request: dict):
             image_data = image_data.split("base64,")[1]
         
         image_bytes = base64.b64decode(image_data)
-        image = Image.open(io.BytesIO(image_bytes))
-        
-        detected_objects = detect_objects_yolo(image)
-        
-        return {
-            "status": "success",
-            "objects": detected_objects,
-            "object_count": len(detected_objects),
-            "detection_method": "YOLO v8" if yolo_model else "Edge Detection",
-            "message": f"Analysis complete: {len(detected_objects)} objects found"
+       
