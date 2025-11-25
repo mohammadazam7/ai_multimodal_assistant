@@ -93,10 +93,6 @@ async def startup_event():
 
 # API Endpoints
 @app.get("/")
-def health_check():
-    global yolo_model
-    model_status = "YOLO Ready" if yolo_model else "Simple Detection"
-    return {
-        "message": "AI Assistant Backend Online", 
+ 
       
   
