@@ -157,15 +157,7 @@ def get_capabilities():
         return {
             "detection_method": "Simple Edge Detection",
             "total_classes": 3,
-            "objects": ["Simple Scene", "Objects Detected", "Complex Scene"],
-            "note": "Install ultralytics for advanced object detection"
-        }
-
-@app.post("/ai/analyze-frame")
-def analyze_frame(request: dict):
-    """Analyze camera frame for object detection"""
-    try:
-        image_data = request.get("image", "")
+          
         
         if "base64," in image_data:
             image_data = image_data.split("base64,")[1]
