@@ -106,12 +106,7 @@ def health_check():
 def ai_status():
     global yolo_model
     return {
-        "pytorch": torch.__version__,
-        "opencv": cv2.__version__,
-        "transformers": transformers.__version__,
-        "cuda": torch.cuda.is_available(),
-        "yolo_available": yolo_model is not None,
-        "detection_classes": len(yolo_model.names) if yolo_model else 0,
+      el.names) if yolo_model else 0,
         "message": "AI systems operational"
     }
 
