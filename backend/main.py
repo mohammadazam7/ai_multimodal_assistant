@@ -106,18 +106,7 @@ def health_check():
 def ai_status():
     global yolo_model
     return {
-      el.names) if yolo_model else 0,
-        "message": "AI systems operational"
-    }
-
-@app.get("/ai/test")
-def test_ai():
-    global yolo_model
-    mode = "Advanced YOLO" if yolo_model else "Basic Edge Detection"
-    return {
-        "response": f"AI brain working with {mode}!", 
-        "status": "success"
-    }
+   
 
 @app.get("/ai/capabilities")
 def get_capabilities():
