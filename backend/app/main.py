@@ -9,10 +9,10 @@ from contextlib import asynccontextmanager
 from typing import Annotated
 
 from fastapi import FastAPI, File, HTTPException, Request, UploadFile, status
-from fastapi.concurrency import run_in_threadpool
 from fastapi.middleware.cors import CORSMiddleware
 
 from app import __version__
+from app.batching import MicroBatcher
 from app.config import Settings, get_settings
 from app.detector import Detector, build_detector
 from app.imaging import InvalidImageError, decode_base64, decode_image
@@ -26,8 +26,19 @@ def create_app(settings: Settings | None = None, detector: Detector | None = Non
 
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
-        app.state.detector = detector or build_detector(settings)
-        yield
+        det = detector or build_detector(settings)
+        batcher = MicroBatcher(
+            det,
+            max_batch_size=settings.batch_max_size,
+            max_wait_ms=settings.batch_max_wait_ms,
+        )
+        app.state.detector = det
+        app.state.batcher = batcher
+        await batcher.start()
+        try:
+            yield
+        finally:
+            await batcher.stop()
 
     app = FastAPI(
         title="Vision Service",
@@ -45,6 +56,9 @@ def create_app(settings: Settings | None = None, detector: Detector | None = Non
     def _detector(request: Request) -> Detector:
         return request.app.state.detector  # type: ignore[no-any-return]
 
+    def _batcher(request: Request) -> MicroBatcher:
+        return request.app.state.batcher  # type: ignore[no-any-return]
+
     async def _run(request: Request, data: bytes) -> DetectionResponse:
         if len(data) > settings.max_image_bytes:
             raise HTTPException(413, "image too large")
@@ -56,8 +70,8 @@ def create_app(settings: Settings | None = None, detector: Detector | None = Non
 
         det = _detector(request)
         t0 = time.perf_counter()
-        # Inference is CPU/GPU-bound; keep it off the event loop.
-        (detections,) = await run_in_threadpool(det.predict, [frame])
+        # The batcher runs inference in a worker thread, shared with concurrent requests.
+        detections = await _batcher(request).submit(frame)
         inference_ms = (time.perf_counter() - t0) * 1000
 
         return DetectionResponse(
