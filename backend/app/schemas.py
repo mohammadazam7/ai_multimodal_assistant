@@ -25,8 +25,8 @@ class DetectionResponse(BaseModel):
     width: int
     height: int
     model: str
-    inference_ms: float = Field(description="Model forward pass only")
-    total_ms: float = Field(description="Decode + inference + post-processing")
+    inference_ms: float = Field(description="Batch wait + model forward pass")
+    total_ms: float = Field(description="Decode + batch wait + inference + post-processing")
 
 
 class Base64Image(BaseModel):
