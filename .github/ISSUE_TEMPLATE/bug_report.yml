@@ -1,0 +1,20 @@
+name: Bug report
+description: Wrong detections, crashes or latency regressions
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened, and what you expected
+    validations:
+      required: true
+  - type: input
+    id: env
+    attributes:
+      label: Environment
+      placeholder: "GPU/CPU model, OS, VISION_* settings"
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs or request/response
+      render: shell
