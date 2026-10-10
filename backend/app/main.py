@@ -123,7 +123,7 @@ def create_app(settings: Settings | None = None, detector: Detector | None = Non
         try:
             data = decode_base64(body.image)
         except InvalidImageError as exc:
-            raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, str(exc)) from exc
+            raise HTTPException(422, str(exc)) from exc
         return await _run(request, data)
 
     @app.websocket("/v1/stream")
