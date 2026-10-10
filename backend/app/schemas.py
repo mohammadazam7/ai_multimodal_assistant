@@ -25,8 +25,20 @@ class DetectionResponse(BaseModel):
     width: int
     height: int
     model: str
-    inference_ms: float = Field(description="Model forward pass only")
-    total_ms: float = Field(description="Decode + inference + post-processing")
+    inference_ms: float = Field(description="Batch wait + model forward pass")
+    total_ms: float = Field(description="Decode + batch wait + inference + post-processing")
+
+
+class StreamResult(DetectionResponse):
+    """One processed frame on the WebSocket stream."""
+
+    seq: int = Field(description="1-based number of the frame on this connection")
+    dropped: int = Field(description="Frames on this connection skipped so far as stale")
+
+
+class StreamError(BaseModel):
+    seq: int
+    error: str
 
 
 class Base64Image(BaseModel):

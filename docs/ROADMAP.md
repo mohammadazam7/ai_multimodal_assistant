@@ -6,7 +6,7 @@ Each milestone lands as a reviewed pull request with tests. Checked items are do
       typed FastAPI service with `/v1/detect` (multipart and base64), pluggable detector
       interface (YOLO, null), device selection with FP16 on CUDA, request limits,
       Dockerfile, CI.
-- [ ] **M2 · Multi-stream batching.** Async micro-batcher that collects frames from many
+- [x] **M2 · Multi-stream batching.** Async micro-batcher that collects frames from many
       streams for up to N ms or B frames and runs one forward pass; per-stream WebSocket
       endpoint; back-pressure (drop stale frames instead of queueing); unit tests with a
       fake detector.

@@ -3,6 +3,7 @@ from __future__ import annotations
 import base64
 import io
 from collections.abc import Iterator
+from concurrent.futures import ThreadPoolExecutor
 
 import numpy as np
 import pytest
@@ -104,3 +105,24 @@ def test_null_detector_returns_empty_lists() -> None:
 )
 def test_resolve_device(requested: str, cuda: bool, expected: str) -> None:
     assert _resolve_device(requested, cuda) == expected
+
+
+def test_concurrent_requests_are_batched() -> None:
+    detector = FakeDetector()
+    settings = Settings(detector="null", batch_max_size=4, batch_max_wait_ms=200)
+    app = create_app(settings, detector=detector)
+    calls: list[int] = []
+    original = detector.predict
+
+    def counting_predict(frames: list[Frame]) -> list[list[Detection]]:
+        calls.append(len(frames))
+        return original(frames)
+
+    detector.predict = counting_predict  # type: ignore[method-assign]
+    with TestClient(app) as client, ThreadPoolExecutor(max_workers=4) as pool:
+        files = {"file": ("f.png", _png(), "image/png")}
+        responses = list(pool.map(lambda _: client.post("/v1/detect", files=files), range(4)))
+
+    assert all(r.status_code == 200 for r in responses)
+    assert sum(calls) == 4
+    assert len(calls) < 4  # at least two requests shared a forward pass
