@@ -12,9 +12,9 @@ Real-time object detection on live camera feeds. A FastAPI service runs a YOLO m
 service is built to batch frames from many cameras into one forward pass and scale out
 on Kubernetes.
 
-> **Status:** under active development. The detection service and multi-stream
-> batching are done; see the [roadmap](docs/ROADMAP.md) for the web client,
-> observability, Kubernetes and benchmarks.
+> **Status:** under active development. The detection service, multi-stream batching
+> and the web client are done; see the [roadmap](docs/ROADMAP.md) for observability,
+> Kubernetes and benchmarks.
 
 ## Architecture
 
@@ -103,6 +103,19 @@ uvicorn app.main:app
 curl -F file=@street.jpg http://localhost:8000/v1/detect
 ```
 
+Web client (in a second terminal, with the API on port 8000):
+
+```bash
+cd frontend
+npm install
+npm run dev   # http://localhost:5173
+```
+
+Pick a camera and press **Add camera**; add the same or another camera again to open
+more streams. Each tile shows its own FPS, browser-measured p50/p95 round trip, the
+server-side time and how many frames the server dropped. The dev server proxies `/v1`
+and `/healthz` to the API, so no CORS setup is needed.
+
 Docker:
 
 ```bash
@@ -140,6 +153,11 @@ docker run -p 8000:8000 vision-service
 - **Torch is optional.** The API, validation and tests install without the inference
   stack, which keeps CI fast. The `null` detector lets the web client be developed
   without a GPU.
+- **One frame in flight per camera.** The client encodes the next frame only after the
+  previous result arrives, so a slow server lowers the frame rate instead of growing a
+  queue, and the measured round trip never includes time spent behind older frames.
+  Frames are downscaled to 640 px wide JPEG before upload; the overlay rescales the
+  boxes to whatever size the tile is drawn at.
 - **Fail loudly on bad input.** Non-images return `415`, bad base64 returns `422`, and
   oversized uploads return `413`, instead of a `200` with an error string.
 
