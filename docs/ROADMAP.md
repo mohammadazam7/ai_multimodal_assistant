@@ -10,7 +10,7 @@ Each milestone lands as a reviewed pull request with tests. Checked items are do
       streams for up to N ms or B frames and runs one forward pass; per-stream WebSocket
       endpoint; back-pressure (drop stale frames instead of queueing); unit tests with a
       fake detector.
-- [ ] **M3 · Web client.** Rebuild the React app with Vite + TypeScript: webcam capture,
+- [x] **M3 · Web client.** Rebuild the React app with Vite + TypeScript: webcam capture,
       live box overlay on canvas, multi-camera grid, latency and FPS readouts.
 - [ ] **M4 · Observability.** Prometheus metrics (latency histograms, batch size, queue
       depth, dropped frames), structured JSON logs, `/readyz` vs `/healthz`.

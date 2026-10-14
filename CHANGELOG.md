@@ -14,11 +14,19 @@ All notable changes to this project are listed here. The format follows
   results out, with per-stream `seq` and `dropped` counters.
 - Per-stream back-pressure: a latest-frame slot replaces stale frames instead of
   queueing them.
+- Web client rebuilt with Vite, React 19 and TypeScript: multi-camera grid, webcam
+  capture downscaled to 640 px JPEG, canvas box overlay, and per-stream FPS, p50/p95
+  round trip, server time and dropped-frame readouts. Lint, type-check, tests and a
+  production build run in CI.
 
 ### Changed
 
 - `/v1/detect` and `/v1/detect/base64` now go through the micro-batcher.
 - `inference_ms` now includes the time a frame waits for its batch.
+
+### Removed
+
+- The Create React App frontend and its dependencies.
 
 ## [0.2.0] - 2026-10-08
 
