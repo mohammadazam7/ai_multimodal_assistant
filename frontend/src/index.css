@@ -46,3 +46,137 @@ body {
   color: var(--muted);
   margin: 4px 0 0;
 }
+
+.app-header {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 8px 24px;
+}
+
+.server {
+  margin: 0;
+  font-size: 0.875rem;
+}
+
+.error,
+.tile-error {
+  color: #dc2626;
+}
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin: 20px 0;
+}
+
+button,
+select {
+  font: inherit;
+  padding: 4px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--panel);
+  color: var(--fg);
+}
+
+button {
+  cursor: pointer;
+}
+
+.empty {
+  padding: 48px 16px;
+  text-align: center;
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 360px), 1fr));
+  gap: 16px;
+}
+
+.tile {
+  margin: 0;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.tile-view {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  background: #000;
+}
+
+.tile-view video,
+.tile-overlay {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* The overlay is stretched to the same box as the video, so boxes scale with it. */
+.tile-view video {
+  object-fit: fill;
+}
+
+.tile-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+}
+
+.tile-label {
+  flex: 1;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.tile-status {
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.tile-status-open {
+  color: #16a34a;
+}
+
+.tile-status-error,
+.tile-status-closed {
+  color: #dc2626;
+}
+
+.tile-stats {
+  display: grid;
+  grid-template-columns: repeat(5, auto);
+  grid-auto-flow: column;
+  grid-template-rows: auto auto;
+  gap: 0 12px;
+  margin: 0;
+  padding: 0 10px 10px;
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.tile-stats dt {
+  color: var(--muted);
+}
+
+.tile-stats dd {
+  margin: 0;
+}
+
+.tile-error {
+  margin: 0;
+  padding: 0 10px 10px;
+  font-size: 0.875rem;
+}
