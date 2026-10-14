@@ -1,46 +1,33 @@
-# Getting Started with Create React App
+# Vision client
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+Browser client for the detection service: Vite, React 19 and TypeScript.
 
-## Available Scripts
+```bash
+npm install
+npm run dev        # http://localhost:5173, proxies /v1 to http://localhost:8000
+```
 
-In the project directory, you can run:
+Set `VITE_API_PROXY` to point the dev server at a backend running elsewhere.
 
-### `npm start`
+Camera access needs a secure context: `localhost` works, but a phone or another machine
+on the LAN needs the page served over HTTPS.
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+## Layout
 
-The page will reload if you make edits.\
-You will also see any lint errors in the console.
+| Path | Contents |
+|---|---|
+| `src/api/` | typed HTTP client and `DetectionStream`, one WebSocket per camera |
+| `src/camera/` | device listing, `getUserMedia`, JPEG frame encoder |
+| `src/overlay/` | box scaling and canvas drawing |
+| `src/metrics/` | rolling FPS and latency percentiles over the last 3 s |
+| `src/components/` | `CameraTile`, which ties the above together for one camera |
 
-### `npm test`
+Everything outside `components/` and `App.tsx` is plain TypeScript with no React, so it
+is unit-tested directly with fakes for the socket, the canvas and the media devices.
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
-
-### `npm run build`
-
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
-
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
-
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
-
-### `npm run eject`
-
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
-
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
-
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
-
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
+| Script | What it does |
+|---|---|
+| `npm run typecheck` | `tsc -b` in strict mode |
+| `npm run lint` | ESLint with typescript-eslint and the React hooks rules |
+| `npm test` | Vitest + Testing Library in jsdom |
+| `npm run build` | type-check, then a production build in `dist/` |
