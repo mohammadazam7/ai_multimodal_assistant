@@ -108,9 +108,12 @@ def create_app(settings: Settings | None = None, detector: Detector | None = Non
             raise HTTPException(413, "image too large")
         started = time.perf_counter()
         try:
-            return await _infer(_detector(request), _batcher(request), data, started)
+            result = await _infer(_detector(request), _batcher(request), data, started)
         except InvalidImageError as exc:
+            metrics.invalid_frame("http")
             raise HTTPException(status.HTTP_415_UNSUPPORTED_MEDIA_TYPE, str(exc)) from exc
+        metrics.observe_frame("http", time.perf_counter() - started)
+        return result
 
     @app.get("/healthz", response_model=Health, tags=["ops"])
     def healthz(request: Request) -> Health:
@@ -146,6 +149,13 @@ def create_app(settings: Settings | None = None, detector: Detector | None = Non
         with 1009.
         """
         await ws.accept()
+        metrics.streams_in_flight.inc()
+        try:
+            await _serve_stream(ws)
+        finally:
+            metrics.streams_in_flight.dec()
+
+    async def _serve_stream(ws: WebSocket) -> None:
         det: Detector = ws.app.state.detector
         batcher: MicroBatcher = ws.app.state.batcher
         slot: LatestFrameSlot[_StreamFrame] = LatestFrameSlot()
@@ -171,17 +181,28 @@ def create_app(settings: Settings | None = None, detector: Detector | None = Non
             finally:
                 slot.close()
 
+        reported_drops = 0
+
+        def report_drops() -> None:
+            nonlocal reported_drops
+            if slot.dropped > reported_drops:
+                metrics.frames_dropped.inc(slot.dropped - reported_drops)
+                reported_drops = slot.dropped
+
         async def process() -> None:
             while True:
                 try:
                     item = await slot.get()
                 except SlotClosedError:
                     return
+                report_drops()
                 try:
                     result = await _infer(det, batcher, item.data, item.received)
                 except InvalidImageError as exc:
+                    metrics.invalid_frame("stream")
                     await ws.send_json(StreamError(seq=item.seq, error=str(exc)).model_dump())
                     continue
+                metrics.observe_frame("stream", time.perf_counter() - item.received)
                 payload = StreamResult(**result.model_dump(), seq=item.seq, dropped=slot.dropped)
                 await ws.send_json(payload.model_dump())
 
@@ -194,6 +215,7 @@ def create_app(settings: Settings | None = None, detector: Detector | None = Non
             receiver.cancel()
             processor.cancel()
             outcomes = await asyncio.gather(receiver, processor, return_exceptions=True)
+            report_drops()
 
         # A WebSocketDisconnect only means the client left before we finished sending.
         failure = next(

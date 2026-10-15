@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import asyncio
+import time
 
 import numpy as np
 import pytest
 from fastapi.testclient import TestClient
 from test_api import FakeDetector, _png
 from test_batching import FailingDetector, RecordingDetector
+from test_stream_ws import GatedDetector
 
 from app.batching import MicroBatcher
 from app.config import Settings
@@ -85,3 +87,43 @@ def test_metrics_endpoint_exposes_prometheus_text() -> None:
     assert resp.headers["content-type"].startswith("text/plain")
     assert "vision_batch_size_count 1.0" in resp.text
     assert "vision_batch_queue_depth 0.0" in resp.text
+
+
+def _app_metrics(client: TestClient) -> Metrics:
+    metrics: Metrics = client.app.state.metrics  # type: ignore[attr-defined]
+    return metrics
+
+
+def test_http_frames_are_counted_by_outcome() -> None:
+    app = create_app(Settings(detector="null"), detector=FakeDetector())
+    with TestClient(app) as client:
+        client.post("/v1/detect", files={"file": ("f.png", _png(), "image/png")})
+        client.post("/v1/detect", files={"file": ("f.png", b"not an image", "image/png")})
+        m = _app_metrics(client)
+
+    assert sample(m, "vision_frames_total", {"source": "http", "outcome": "ok"}) == 1
+    assert sample(m, "vision_frames_total", {"source": "http", "outcome": "invalid"}) == 1
+    assert sample(m, "vision_detect_seconds_count", {"source": "http"}) == 1
+
+
+def test_stream_metrics_track_open_streams_and_drops() -> None:
+    detector = GatedDetector()
+    settings = Settings(detector="null", batch_max_wait_ms=0)
+    with TestClient(create_app(settings, detector=detector)) as client:
+        m = _app_metrics(client)
+        detector.gate.clear()
+        with client.websocket_connect("/v1/stream") as ws:
+            ws.send_bytes(_png())
+            assert detector.entered.wait(timeout=5)
+            assert sample(m, "vision_streams_in_flight") == 1
+            for _ in range(3):
+                ws.send_bytes(_png())
+            time.sleep(0.2)
+            detector.gate.set()
+            ws.receive_json()
+            assert ws.receive_json()["dropped"] == 2
+
+        assert sample(m, "vision_streams_in_flight") == 0
+    assert sample(m, "vision_stream_frames_dropped_total") == 2
+    assert sample(m, "vision_frames_total", {"source": "stream", "outcome": "ok"}) == 2
+    assert sample(m, "vision_detect_seconds_count", {"source": "stream"}) == 2
