@@ -13,7 +13,7 @@ service is built to batch frames from many cameras into one forward pass and sca
 on Kubernetes.
 
 > **Status:** under active development. The detection service, multi-stream batching
-> and the web client are done; see the [roadmap](docs/ROADMAP.md) for observability,
+> the web client and observability are done; see the [roadmap](docs/ROADMAP.md) for
 > Kubernetes and benchmarks.
 
 ## Architecture
@@ -39,7 +39,9 @@ flowchart LR
 
 | Method | Path | Body | Returns |
 |---|---|---|---|
-| `GET` | `/healthz` | – | model, device, readiness |
+| `GET` | `/healthz` | – | liveness: model, device, readiness flag (always `200`) |
+| `GET` | `/readyz` | – | readiness checks; `503` when the service should not get traffic |
+| `GET` | `/metrics` | – | Prometheus metrics |
 | `POST` | `/v1/detect` | `multipart/form-data` with `file` | detections + timings |
 | `POST` | `/v1/detect/base64` | `{"image": "data:image/jpeg;base64,..."}` | detections + timings |
 | `WS` | `/v1/stream` | one binary message (JPEG/PNG) per frame | one JSON result per processed frame |
@@ -135,6 +137,59 @@ docker run -p 8000:8000 vision-service
 | `VISION_MAX_IMAGE_BYTES` | `8388608` | larger uploads get `413`, larger stream frames close with 1009 |
 | `VISION_BATCH_MAX_SIZE` | `8` | most frames in one forward pass |
 | `VISION_BATCH_MAX_WAIT_MS` | `5` | longest a frame waits for others to join its batch |
+| `VISION_LOG_LEVEL` | `INFO` | root log level |
+| `VISION_LOG_FORMAT` | `json` | `json` (one object per line) or `text` |
+
+## Observability
+
+`/metrics` exposes these series for Prometheus (each app instance has its own registry):
+
+| Metric | Type | What it shows |
+|---|---|---|
+| `vision_detect_seconds{source}` | histogram | frame received → detections ready, decode included; `source` is `http` or `stream` |
+| `vision_inference_seconds` | histogram | one forward pass over a batch |
+| `vision_batch_size` | histogram | frames per forward pass |
+| `vision_batch_queue_depth` | gauge | frames waiting for the batcher, read at scrape time |
+| `vision_batch_failures_total` | counter | forward passes that raised |
+| `vision_frames_total{source,outcome}` | counter | frames handled, `outcome` is `ok` or `invalid` |
+| `vision_stream_frames_dropped_total` | counter | stream frames replaced by a newer one before inference |
+| `vision_streams_in_flight` | gauge | open WebSocket streams |
+
+Useful queries:
+
+```promql
+# p95 end-to-end latency per source over 5 minutes
+histogram_quantile(0.95, sum by (le, source) (rate(vision_detect_seconds_bucket[5m])))
+
+# average frames per forward pass (how much batching is actually happening)
+rate(vision_batch_size_sum[5m]) / rate(vision_batch_size_count[5m])
+
+# share of stream frames skipped because the model fell behind
+rate(vision_stream_frames_dropped_total[5m])
+  / (rate(vision_stream_frames_dropped_total[5m]) + rate(vision_frames_total{source="stream"}[5m]))
+```
+
+Logs go to stdout as one JSON object per line. Every HTTP request is logged once with
+an id, which is also returned in the `X-Request-ID` response header (an incoming
+`X-Request-ID` from a proxy is reused):
+
+```json
+{"ts": "2026-10-15T23:18:10.847+00:00", "level": "info", "logger": "app.access", "msg": "POST /v1/detect 200", "request_id": "98577a6e3dcd4280afbbcf1e0fd17500", "method": "POST", "path": "/v1/detect", "status": 200, "duration_ms": 129.4}
+```
+
+Requests to `/healthz`, `/readyz` and `/metrics` are logged at debug so probes and
+scrapes don't drown everything else. Streams log when they open and close, with the
+number of frames dropped.
+
+`/healthz` and `/readyz` answer different questions. `/healthz` is liveness: it returns
+`200` as long as the process can serve HTTP, so an orchestrator only restarts the
+container when it is truly stuck. `/readyz` is readiness: it returns `503` and lists
+the failing check when the model is not loaded, the batcher is not running, or the
+service is shutting down, so traffic is moved away without a restart.
+
+```json
+{"ready": true, "checks": {"model_loaded": true, "batcher_running": true, "not_draining": true}}
+```
 
 ## Design notes
 

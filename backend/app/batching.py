@@ -17,6 +17,7 @@ import contextlib
 import logging
 import time
 from dataclasses import dataclass, field
+from typing import Protocol
 
 from app.detector import Detector, Frame
 from app.schemas import Detection
@@ -26,6 +27,14 @@ log = logging.getLogger(__name__)
 
 class BatcherClosedError(RuntimeError):
     """Raised when a frame is submitted to a batcher that is not running."""
+
+
+class BatchObserver(Protocol):
+    """Told about every forward pass; :class:`app.metrics.Metrics` is one."""
+
+    def observe_batch(self, size: int, seconds: float) -> None: ...
+
+    def batch_failed(self) -> None: ...
 
 
 @dataclass
@@ -55,6 +64,7 @@ class MicroBatcher:
         *,
         max_batch_size: int = 8,
         max_wait_ms: float = 5.0,
+        observer: BatchObserver | None = None,
     ) -> None:
         if max_batch_size < 1:
             raise ValueError("max_batch_size must be >= 1")
@@ -64,6 +74,7 @@ class MicroBatcher:
         self.max_batch_size = max_batch_size
         self.max_wait = max_wait_ms / 1000
         self.stats = BatchStats()
+        self.observer = observer
         self._queue: asyncio.Queue[_Pending] = asyncio.Queue()
         self._worker: asyncio.Task[None] | None = None
         self._current: list[_Pending] = []
@@ -126,6 +137,7 @@ class MicroBatcher:
             if not batch:
                 self._current = []
                 continue
+            t0 = time.perf_counter()
             try:
                 results = await asyncio.to_thread(self.detector.predict, [p.frame for p in batch])
                 if len(results) != len(batch):
@@ -134,11 +146,15 @@ class MicroBatcher:
                     )
             except Exception as exc:
                 log.exception("batch of %d frames failed", len(batch))
+                if self.observer is not None:
+                    self.observer.batch_failed()
                 for p in batch:
                     if not p.future.done():
                         p.future.set_exception(exc)
             else:
                 self.stats.record(len(batch))
+                if self.observer is not None:
+                    self.observer.observe_batch(len(batch), time.perf_counter() - t0)
                 for p, result in zip(batch, results, strict=True):
                     if not p.future.done():
                         p.future.set_result(result)
