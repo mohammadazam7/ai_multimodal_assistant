@@ -22,12 +22,14 @@ from fastapi import (
     status,
 )
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import Response
 
 from app import __version__
 from app.batching import MicroBatcher
 from app.config import Settings, get_settings
 from app.detector import Detector, build_detector
 from app.imaging import InvalidImageError, decode_base64, decode_image
+from app.metrics import Metrics
 from app.schemas import Base64Image, DetectionResponse, Health, StreamError, StreamResult
 from app.streams import LatestFrameSlot, SlotClosedError
 
@@ -62,6 +64,7 @@ async def _infer(
 
 def create_app(settings: Settings | None = None, detector: Detector | None = None) -> FastAPI:
     settings = settings or get_settings()
+    metrics = Metrics()
 
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
@@ -70,7 +73,9 @@ def create_app(settings: Settings | None = None, detector: Detector | None = Non
             det,
             max_batch_size=settings.batch_max_size,
             max_wait_ms=settings.batch_max_wait_ms,
+            observer=metrics,
         )
+        metrics.track_queue_depth(lambda: batcher.queue_depth)
         app.state.detector = det
         app.state.batcher = batcher
         await batcher.start()
@@ -111,6 +116,10 @@ def create_app(settings: Settings | None = None, detector: Detector | None = Non
     def healthz(request: Request) -> Health:
         det = _detector(request)
         return Health(status="ok", model=det.name, device=det.device, ready=True)
+
+    @app.get("/metrics", tags=["ops"], include_in_schema=False)
+    def prometheus_metrics() -> Response:
+        return Response(metrics.render(), media_type=metrics.content_type)
 
     @app.post("/v1/detect", response_model=DetectionResponse, tags=["detection"])
     async def detect(request: Request, file: Annotated[UploadFile, File()]) -> DetectionResponse:
@@ -202,6 +211,7 @@ def create_app(settings: Settings | None = None, detector: Detector | None = Non
             with contextlib.suppress(RuntimeError, WebSocketDisconnect):
                 await ws.close(*close)
 
+    app.state.metrics = metrics
     return app
 
 
