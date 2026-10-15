@@ -25,6 +25,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response
 
 from app import __version__
+from app.access import AccessLogMiddleware
 from app.batching import MicroBatcher
 from app.config import Settings, get_settings
 from app.detector import Detector, build_detector
@@ -96,7 +97,10 @@ def create_app(settings: Settings | None = None, detector: Detector | None = Non
         allow_origins=settings.cors_origins,
         allow_methods=["GET", "POST"],
         allow_headers=["*"],
+        expose_headers=["X-Request-ID"],
     )
+    # Added last so it is outermost and also times CORS handling.
+    app.add_middleware(AccessLogMiddleware)
 
     def _detector(request: Request) -> Detector:
         return request.app.state.detector  # type: ignore[no-any-return]
@@ -151,12 +155,16 @@ def create_app(settings: Settings | None = None, detector: Detector | None = Non
         """
         await ws.accept()
         metrics.streams_in_flight.inc()
+        client = f"{ws.client.host}:{ws.client.port}" if ws.client else "unknown"
+        log.info("stream opened", extra={"client": client})
         try:
-            await _serve_stream(ws)
+            dropped = await _serve_stream(ws)
         finally:
             metrics.streams_in_flight.dec()
+        log.info("stream closed", extra={"client": client, "dropped": dropped})
 
-    async def _serve_stream(ws: WebSocket) -> None:
+    async def _serve_stream(ws: WebSocket) -> int:
+        """Run one stream until either side ends it; returns the number of dropped frames."""
         det: Detector = ws.app.state.detector
         batcher: MicroBatcher = ws.app.state.batcher
         slot: LatestFrameSlot[_StreamFrame] = LatestFrameSlot()
@@ -233,6 +241,7 @@ def create_app(settings: Settings | None = None, detector: Detector | None = Non
         if close is not None:
             with contextlib.suppress(RuntimeError, WebSocketDisconnect):
                 await ws.close(*close)
+        return slot.dropped
 
     app.state.metrics = metrics
     return app
