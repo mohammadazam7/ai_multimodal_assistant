@@ -29,6 +29,7 @@ from app.batching import MicroBatcher
 from app.config import Settings, get_settings
 from app.detector import Detector, build_detector
 from app.imaging import InvalidImageError, decode_base64, decode_image
+from app.logs import configure_logging
 from app.metrics import Metrics
 from app.schemas import Base64Image, DetectionResponse, Health, StreamError, StreamResult
 from app.streams import LatestFrameSlot, SlotClosedError
@@ -237,4 +238,10 @@ def create_app(settings: Settings | None = None, detector: Detector | None = Non
     return app
 
 
-app = create_app()
+def _default_app() -> FastAPI:
+    settings = get_settings()
+    configure_logging(settings.log_level, settings.log_format)
+    return create_app(settings)
+
+
+app = _default_app()
