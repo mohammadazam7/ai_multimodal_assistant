@@ -16,9 +16,10 @@ from typing import Any, Literal
 LogFormat = Literal["json", "text"]
 
 # Attributes every LogRecord has; anything else on a record came from ``extra=``.
+# uvicorn also attaches ``color_message``, a copy of the message with ANSI colours.
 _RESERVED = frozenset(
     vars(logging.LogRecord("", logging.INFO, "", 0, "", None, None)).keys()
-    | {"message", "asctime", "taskName"}
+    | {"message", "asctime", "taskName", "color_message"}
 )
 
 
