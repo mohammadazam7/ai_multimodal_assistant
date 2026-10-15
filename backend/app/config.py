@@ -21,6 +21,8 @@ class Settings(BaseSettings):
     # Micro-batching: group frames from concurrent requests into one forward pass.
     batch_max_size: int = Field(default=8, ge=1)
     batch_max_wait_ms: float = Field(default=5.0, ge=0)
+    log_level: str = "INFO"
+    log_format: Literal["json", "text"] = "json"
     cors_origins: list[str] = ["http://localhost:3000", "http://localhost:5173"]
 
 

@@ -50,3 +50,8 @@ class Health(BaseModel):
     model: str
     device: str
     ready: bool
+
+
+class Readiness(BaseModel):
+    ready: bool
+    checks: dict[str, bool] = Field(description="Each condition that must hold to take traffic")

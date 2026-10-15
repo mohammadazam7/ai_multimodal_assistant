@@ -22,13 +22,24 @@ from fastapi import (
     status,
 )
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse, Response
 
 from app import __version__
+from app.access import AccessLogMiddleware
 from app.batching import MicroBatcher
 from app.config import Settings, get_settings
 from app.detector import Detector, build_detector
 from app.imaging import InvalidImageError, decode_base64, decode_image
-from app.schemas import Base64Image, DetectionResponse, Health, StreamError, StreamResult
+from app.logs import configure_logging
+from app.metrics import Metrics
+from app.schemas import (
+    Base64Image,
+    DetectionResponse,
+    Health,
+    Readiness,
+    StreamError,
+    StreamResult,
+)
 from app.streams import LatestFrameSlot, SlotClosedError
 
 log = logging.getLogger(__name__)
@@ -62,6 +73,7 @@ async def _infer(
 
 def create_app(settings: Settings | None = None, detector: Detector | None = None) -> FastAPI:
     settings = settings or get_settings()
+    metrics = Metrics()
 
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
@@ -70,13 +82,19 @@ def create_app(settings: Settings | None = None, detector: Detector | None = Non
             det,
             max_batch_size=settings.batch_max_size,
             max_wait_ms=settings.batch_max_wait_ms,
+            observer=metrics,
         )
+        metrics.track_queue_depth(lambda: batcher.queue_depth)
         app.state.detector = det
         app.state.batcher = batcher
+        app.state.draining = False
         await batcher.start()
+        log.info("service ready", extra={"model": det.name, "device": det.device})
         try:
             yield
         finally:
+            # Fail readiness first so a load balancer stops routing here while we stop.
+            app.state.draining = True
             await batcher.stop()
 
     app = FastAPI(
@@ -90,7 +108,10 @@ def create_app(settings: Settings | None = None, detector: Detector | None = Non
         allow_origins=settings.cors_origins,
         allow_methods=["GET", "POST"],
         allow_headers=["*"],
+        expose_headers=["X-Request-ID"],
     )
+    # Added last so it is outermost and also times CORS handling.
+    app.add_middleware(AccessLogMiddleware)
 
     def _detector(request: Request) -> Detector:
         return request.app.state.detector  # type: ignore[no-any-return]
@@ -103,14 +124,49 @@ def create_app(settings: Settings | None = None, detector: Detector | None = Non
             raise HTTPException(413, "image too large")
         started = time.perf_counter()
         try:
-            return await _infer(_detector(request), _batcher(request), data, started)
+            result = await _infer(_detector(request), _batcher(request), data, started)
         except InvalidImageError as exc:
+            metrics.invalid_frame("http")
             raise HTTPException(status.HTTP_415_UNSUPPORTED_MEDIA_TYPE, str(exc)) from exc
+        metrics.observe_frame("http", time.perf_counter() - started)
+        return result
+
+    def _readiness(request: Request) -> Readiness:
+        state = request.app.state
+        checks = {
+            "model_loaded": getattr(state, "detector", None) is not None,
+            "batcher_running": getattr(state, "batcher", None) is not None
+            and state.batcher.running,
+            "not_draining": not getattr(state, "draining", True),
+        }
+        return Readiness(ready=all(checks.values()), checks=checks)
 
     @app.get("/healthz", response_model=Health, tags=["ops"])
     def healthz(request: Request) -> Health:
+        """Liveness: answers 200 whenever the process can serve HTTP at all.
+
+        Restarting the pod would not fix a stopped batcher or a drain in progress, so
+        those only show up in ``ready`` here and as a 503 from ``/readyz``.
+        """
         det = _detector(request)
-        return Health(status="ok", model=det.name, device=det.device, ready=True)
+        ready = _readiness(request).ready
+        return Health(status="ok", model=det.name, device=det.device, ready=ready)
+
+    @app.get(
+        "/readyz",
+        response_model=Readiness,
+        tags=["ops"],
+        responses={503: {"model": Readiness, "description": "Not ready for traffic"}},
+    )
+    def readyz(request: Request) -> Response:
+        """Readiness: 200 only when the service should receive traffic."""
+        result = _readiness(request)
+        code = status.HTTP_200_OK if result.ready else status.HTTP_503_SERVICE_UNAVAILABLE
+        return JSONResponse(result.model_dump(), status_code=code)
+
+    @app.get("/metrics", tags=["ops"], include_in_schema=False)
+    def prometheus_metrics() -> Response:
+        return Response(metrics.render(), media_type=metrics.content_type)
 
     @app.post("/v1/detect", response_model=DetectionResponse, tags=["detection"])
     async def detect(request: Request, file: Annotated[UploadFile, File()]) -> DetectionResponse:
@@ -137,6 +193,17 @@ def create_app(settings: Settings | None = None, detector: Detector | None = Non
         with 1009.
         """
         await ws.accept()
+        metrics.streams_in_flight.inc()
+        client = f"{ws.client.host}:{ws.client.port}" if ws.client else "unknown"
+        log.info("stream opened", extra={"client": client})
+        try:
+            dropped = await _serve_stream(ws)
+        finally:
+            metrics.streams_in_flight.dec()
+        log.info("stream closed", extra={"client": client, "dropped": dropped})
+
+    async def _serve_stream(ws: WebSocket) -> int:
+        """Run one stream until either side ends it; returns the number of dropped frames."""
         det: Detector = ws.app.state.detector
         batcher: MicroBatcher = ws.app.state.batcher
         slot: LatestFrameSlot[_StreamFrame] = LatestFrameSlot()
@@ -162,17 +229,28 @@ def create_app(settings: Settings | None = None, detector: Detector | None = Non
             finally:
                 slot.close()
 
+        reported_drops = 0
+
+        def report_drops() -> None:
+            nonlocal reported_drops
+            if slot.dropped > reported_drops:
+                metrics.frames_dropped.inc(slot.dropped - reported_drops)
+                reported_drops = slot.dropped
+
         async def process() -> None:
             while True:
                 try:
                     item = await slot.get()
                 except SlotClosedError:
                     return
+                report_drops()
                 try:
                     result = await _infer(det, batcher, item.data, item.received)
                 except InvalidImageError as exc:
+                    metrics.invalid_frame("stream")
                     await ws.send_json(StreamError(seq=item.seq, error=str(exc)).model_dump())
                     continue
+                metrics.observe_frame("stream", time.perf_counter() - item.received)
                 payload = StreamResult(**result.model_dump(), seq=item.seq, dropped=slot.dropped)
                 await ws.send_json(payload.model_dump())
 
@@ -185,6 +263,7 @@ def create_app(settings: Settings | None = None, detector: Detector | None = Non
             receiver.cancel()
             processor.cancel()
             outcomes = await asyncio.gather(receiver, processor, return_exceptions=True)
+            report_drops()
 
         # A WebSocketDisconnect only means the client left before we finished sending.
         failure = next(
@@ -201,8 +280,16 @@ def create_app(settings: Settings | None = None, detector: Detector | None = Non
         if close is not None:
             with contextlib.suppress(RuntimeError, WebSocketDisconnect):
                 await ws.close(*close)
+        return slot.dropped
 
+    app.state.metrics = metrics
     return app
 
 
-app = create_app()
+def _default_app() -> FastAPI:
+    settings = get_settings()
+    configure_logging(settings.log_level, settings.log_format)
+    return create_app(settings)
+
+
+app = _default_app()
