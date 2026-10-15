@@ -35,6 +35,11 @@ def test_extra_fields_become_top_level_keys() -> None:
     assert "args" not in entry
 
 
+def test_uvicorn_colour_copy_is_dropped() -> None:
+    entry = json.loads(JsonFormatter().format(_record("up", color_message="\x1b[1mup\x1b[0m")))
+    assert "color_message" not in entry
+
+
 def test_unserialisable_extras_fall_back_to_str() -> None:
     entry = json.loads(JsonFormatter().format(_record("x", path=object())))
     assert entry["path"].startswith("<object object")
