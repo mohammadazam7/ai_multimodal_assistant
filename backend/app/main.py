@@ -22,7 +22,7 @@ from fastapi import (
     status,
 )
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import Response
+from fastapi.responses import JSONResponse, Response
 
 from app import __version__
 from app.access import AccessLogMiddleware
@@ -32,7 +32,14 @@ from app.detector import Detector, build_detector
 from app.imaging import InvalidImageError, decode_base64, decode_image
 from app.logs import configure_logging
 from app.metrics import Metrics
-from app.schemas import Base64Image, DetectionResponse, Health, StreamError, StreamResult
+from app.schemas import (
+    Base64Image,
+    DetectionResponse,
+    Health,
+    Readiness,
+    StreamError,
+    StreamResult,
+)
 from app.streams import LatestFrameSlot, SlotClosedError
 
 log = logging.getLogger(__name__)
@@ -80,10 +87,14 @@ def create_app(settings: Settings | None = None, detector: Detector | None = Non
         metrics.track_queue_depth(lambda: batcher.queue_depth)
         app.state.detector = det
         app.state.batcher = batcher
+        app.state.draining = False
         await batcher.start()
+        log.info("service ready", extra={"model": det.name, "device": det.device})
         try:
             yield
         finally:
+            # Fail readiness first so a load balancer stops routing here while we stop.
+            app.state.draining = True
             await batcher.stop()
 
     app = FastAPI(
@@ -120,10 +131,38 @@ def create_app(settings: Settings | None = None, detector: Detector | None = Non
         metrics.observe_frame("http", time.perf_counter() - started)
         return result
 
+    def _readiness(request: Request) -> Readiness:
+        state = request.app.state
+        checks = {
+            "model_loaded": getattr(state, "detector", None) is not None,
+            "batcher_running": getattr(state, "batcher", None) is not None
+            and state.batcher.running,
+            "not_draining": not getattr(state, "draining", True),
+        }
+        return Readiness(ready=all(checks.values()), checks=checks)
+
     @app.get("/healthz", response_model=Health, tags=["ops"])
     def healthz(request: Request) -> Health:
+        """Liveness: answers 200 whenever the process can serve HTTP at all.
+
+        Restarting the pod would not fix a stopped batcher or a drain in progress, so
+        those only show up in ``ready`` here and as a 503 from ``/readyz``.
+        """
         det = _detector(request)
-        return Health(status="ok", model=det.name, device=det.device, ready=True)
+        ready = _readiness(request).ready
+        return Health(status="ok", model=det.name, device=det.device, ready=ready)
+
+    @app.get(
+        "/readyz",
+        response_model=Readiness,
+        tags=["ops"],
+        responses={503: {"model": Readiness, "description": "Not ready for traffic"}},
+    )
+    def readyz(request: Request) -> Response:
+        """Readiness: 200 only when the service should receive traffic."""
+        result = _readiness(request)
+        code = status.HTTP_200_OK if result.ready else status.HTTP_503_SERVICE_UNAVAILABLE
+        return JSONResponse(result.model_dump(), status_code=code)
 
     @app.get("/metrics", tags=["ops"], include_in_schema=False)
     def prometheus_metrics() -> Response:
