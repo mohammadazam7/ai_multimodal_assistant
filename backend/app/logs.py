@@ -50,8 +50,12 @@ def configure_logging(level: str = "INFO", fmt: LogFormat = "json") -> None:
     root.handlers[:] = [handler]
     root.setLevel(level.upper())
 
-    # uvicorn installs its own handlers; let its records reach ours instead.
-    for name in ("uvicorn", "uvicorn.error", "uvicorn.access"):
+    # uvicorn installs its own handlers; let its records reach ours instead. Its access
+    # log is replaced by AccessLogMiddleware, which also records the request id.
+    for name in ("uvicorn", "uvicorn.error"):
         logger = logging.getLogger(name)
         logger.handlers.clear()
         logger.propagate = True
+    access = logging.getLogger("uvicorn.access")
+    access.handlers.clear()
+    access.propagate = False
