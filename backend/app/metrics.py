@@ -55,6 +55,37 @@ class Metrics:
             registry=r,
         )
 
+        self.detect_seconds = Histogram(
+            "vision_detect_seconds",
+            "Time from receiving a frame to having its detections, decode included.",
+            ["source"],
+            buckets=LATENCY_BUCKETS,
+            registry=r,
+        )
+        self.frames = Counter(
+            "vision_frames",
+            "Frames handled, by source (http, stream) and outcome (ok, invalid).",
+            ["source", "outcome"],
+            registry=r,
+        )
+        self.frames_dropped = Counter(
+            "vision_stream_frames_dropped",
+            "Stream frames replaced by a newer one before the model got to them.",
+            registry=r,
+        )
+        self.streams_in_flight = Gauge(
+            "vision_streams_in_flight",
+            "Open WebSocket streams.",
+            registry=r,
+        )
+
+    def observe_frame(self, source: str, seconds: float) -> None:
+        self.frames.labels(source, "ok").inc()
+        self.detect_seconds.labels(source).observe(seconds)
+
+    def invalid_frame(self, source: str) -> None:
+        self.frames.labels(source, "invalid").inc()
+
     def observe_batch(self, size: int, seconds: float) -> None:
         self.batch_size.observe(size)
         self.inference_seconds.observe(seconds)
