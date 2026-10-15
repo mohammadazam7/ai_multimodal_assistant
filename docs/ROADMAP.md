@@ -12,7 +12,7 @@ Each milestone lands as a reviewed pull request with tests. Checked items are do
       fake detector.
 - [x] **M3 · Web client.** Rebuild the React app with Vite + TypeScript: webcam capture,
       live box overlay on canvas, multi-camera grid, latency and FPS readouts.
-- [ ] **M4 · Observability.** Prometheus metrics (latency histograms, batch size, queue
+- [x] **M4 · Observability.** Prometheus metrics (latency histograms, batch size, queue
       depth, dropped frames), structured JSON logs, `/readyz` vs `/healthz`.
 - [ ] **M5 · Kubernetes.** Manifests with Kustomize overlays (CPU and GPU), resource
       requests/limits, readiness probes, HorizontalPodAutoscaler on CPU and on a custom

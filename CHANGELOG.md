@@ -18,11 +18,21 @@ All notable changes to this project are listed here. The format follows
   capture downscaled to 640 px JPEG, canvas box overlay, and per-stream FPS, p50/p95
   round trip, server time and dropped-frame readouts. Lint, type-check, tests and a
   production build run in CI.
+- Prometheus metrics at `/metrics`: end-to-end and inference latency histograms, batch
+  size, batch queue depth, batch failures, frames by outcome, dropped stream frames and
+  open streams.
+- Structured JSON logs on stdout (`VISION_LOG_FORMAT`, `VISION_LOG_LEVEL`), one access
+  log line per request with a request id echoed in `X-Request-ID`, and stream
+  open/close logs.
+- `/readyz` readiness endpoint that returns `503` with the failing checks while the
+  model is not loaded, the batcher is stopped or the service is draining.
 
 ### Changed
 
 - `/v1/detect` and `/v1/detect/base64` now go through the micro-batcher.
 - `inference_ms` now includes the time a frame waits for its batch.
+- `/healthz` is now a pure liveness check; its `ready` field reflects the `/readyz`
+  checks. The Docker health check uses `/readyz`.
 
 ### Removed
 
