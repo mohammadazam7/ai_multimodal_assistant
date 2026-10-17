@@ -122,7 +122,18 @@ Docker:
 
 ```bash
 docker build -t vision-service backend
-docker run -p 8000:8000 vision-service
+docker run -p 8000:8000 -v vision-models:/models vision-service
+```
+
+The image downloads the weights to `/models` on first start; mounting a volume there
+keeps them across restarts.
+
+Or run the whole stack (API, web client with hot reload, Prometheus) with Compose:
+
+```bash
+docker compose up --build
+# API :8000, client :5173, Prometheus :9090
+VISION_DETECTOR=null docker compose up --build   # skip the model download
 ```
 
 ### Configuration
