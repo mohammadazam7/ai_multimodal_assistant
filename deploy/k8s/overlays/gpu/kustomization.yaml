@@ -1,0 +1,27 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# NVIDIA GPU nodes with the device plugin installed. One GPU per pod; FP16 is on.
+namespace: vision
+
+resources:
+  - namespace.yaml
+  - ../../base
+
+images:
+  - name: vision-service
+    newName: ghcr.io/mohammadazam7/vision-service
+    newTag: gpu
+
+configMapGenerator:
+  - name: vision-config
+    behavior: merge
+    literals:
+      - VISION_DEVICE=cuda
+      - VISION_HALF_PRECISION=true
+      # A GPU forward pass is cheap per frame, so wait a little longer to fill batches.
+      - VISION_BATCH_MAX_SIZE=16
+      - VISION_BATCH_MAX_WAIT_MS=10
+
+patches:
+  - path: gpu.yaml
