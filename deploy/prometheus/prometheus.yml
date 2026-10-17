@@ -1,0 +1,11 @@
+# Scrape config for local development (docker compose). In Kubernetes the service is
+# scraped through the pod annotations in deploy/k8s instead.
+global:
+  scrape_interval: 5s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: vision-service
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["api:8000"]
