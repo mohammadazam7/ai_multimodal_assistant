@@ -1,0 +1,23 @@
+# Helm values for prometheus-community/prometheus-adapter. Exposes the service's
+# vision_streams_in_flight gauge through the custom metrics API so the HPA can read it.
+#
+#   helm install prometheus-adapter prometheus-community/prometheus-adapter \
+#     -n monitoring -f deploy/k8s/prometheus-adapter/values.yaml
+#
+# Check it with:
+#   kubectl get --raw "/apis/custom.metrics.k8s.io/v1beta1/namespaces/vision/pods/*/vision_streams_in_flight"
+prometheus:
+  url: http://prometheus-server.monitoring.svc
+  port: 80
+
+rules:
+  default: false
+  custom:
+    - seriesQuery: 'vision_streams_in_flight{namespace!="",pod!=""}'
+      resources:
+        overrides:
+          namespace: {resource: namespace}
+          pod: {resource: pod}
+      name:
+        as: vision_streams_in_flight
+      metricsQuery: 'max by (<<.GroupBy>>) (<<.Series>>{<<.LabelMatchers>>})'
