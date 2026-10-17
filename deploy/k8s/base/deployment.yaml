@@ -3,7 +3,7 @@ kind: Deployment
 metadata:
   name: vision-service
 spec:
-  replicas: 1
+  # No replica count: the HPA owns it, and applying one here would reset it.
   revisionHistoryLimit: 3
   strategy:
     type: RollingUpdate
