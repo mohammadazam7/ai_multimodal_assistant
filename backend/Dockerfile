@@ -15,7 +15,12 @@ COPY pyproject.toml ./
 COPY app ./app
 RUN pip install --extra-index-url https://download.pytorch.org/whl/cpu ".[inference]"
 
-RUN useradd --create-home --uid 10001 vision
+# Weights are downloaded on first start. Keep them in their own directory, owned by the
+# service user, so a volume can be mounted there to cache them across restarts.
+RUN useradd --create-home --uid 10001 vision \
+ && mkdir /models \
+ && chown vision:vision /models
+ENV VISION_MODEL_PATH=/models/yolov8n.pt
 USER vision
 
 EXPOSE 8000
