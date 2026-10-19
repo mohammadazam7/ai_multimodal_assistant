@@ -12,9 +12,9 @@ Real-time object detection on live camera feeds. A FastAPI service runs a YOLO m
 service is built to batch frames from many cameras into one forward pass and scale out
 on Kubernetes.
 
-> **Status:** under active development. The detection service, multi-stream batching
-> the web client and observability are done; see the [roadmap](docs/ROADMAP.md) for
-> Kubernetes and benchmarks.
+> **Status:** under active development. The detection service, multi-stream batching,
+> the web client, observability and the Kubernetes deployment are done; see the
+> [roadmap](docs/ROADMAP.md) for benchmarks.
 
 ## Architecture
 
@@ -122,8 +122,65 @@ Docker:
 
 ```bash
 docker build -t vision-service backend
-docker run -p 8000:8000 vision-service
+docker run -p 8000:8000 -v vision-models:/models vision-service
 ```
+
+The image downloads the weights to `/models` on first start; mounting a volume there
+keeps them across restarts.
+
+Or run the whole stack (API, web client with hot reload, Prometheus) with Compose:
+
+```bash
+docker compose up --build
+# API :8000, client :5173, Prometheus :9090
+VISION_DETECTOR=null docker compose up --build   # skip the model download
+```
+
+### Kubernetes
+
+Manifests live in `deploy/k8s` as a Kustomize base with two overlays:
+
+| Overlay | Image tag | Node | Scales on |
+|---|---|---|---|
+| `overlays/cpu` | `cpu` | any; requests 2 cores, limit 4 | CPU at 70 % or 4 open streams per pod, 1–8 pods |
+| `overlays/gpu` | `gpu` | NVIDIA GPU with the device plugin, one GPU per pod | 16 open streams per pod, 1–4 pods |
+
+```bash
+# images: the CPU wheel index is the default, pass the CUDA one for the GPU tag
+docker build -t ghcr.io/mohammadazam7/vision-service:cpu backend
+docker build -t ghcr.io/mohammadazam7/vision-service:gpu \
+  --build-arg TORCH_INDEX=https://download.pytorch.org/whl/cu124 backend
+
+kubectl apply -k deploy/k8s/overlays/cpu
+kubectl -n vision port-forward svc/vision-service 8000:80
+```
+
+What the manifests do:
+
+- **Probes match the endpoints.** A startup probe on `/readyz` gives the first start up
+  to five minutes to download the weights; after that, readiness uses `/readyz` and
+  liveness uses `/healthz`, so a pod that is draining or still loading is taken out of
+  the Service without being restarted.
+- **Rollouts keep capacity.** `maxUnavailable: 0` with `maxSurge: 1` means a new pod has
+  to pass readiness before an old one is removed. A short `preStop` sleep lets the
+  endpoint removal reach the load balancer before uvicorn stops accepting connections.
+- **The HPA owns the replica count.** The Deployment sets no `replicas`, so `kubectl
+  apply` never resets what the autoscaler chose. Scale-down is slow (one pod every two
+  to five minutes after a five to ten minute window) because removing a pod drops its
+  WebSocket clients, which then have to reconnect.
+- **Two autoscaling signals.** CPU alone reacts late to streaming load: a new camera
+  connects first and the CPU follows a few seconds later. The custom
+  `vision_streams_in_flight` metric is served to the HPA by
+  [prometheus-adapter](deploy/k8s/prometheus-adapter/values.yaml); the HPA takes the
+  larger of the two proposals. On GPU pods CPU says little about headroom, so only the
+  stream count is used. The per-pod targets are starting points until the M6 benchmark
+  gives measured numbers.
+- **Locked-down pods.** Non-root user, read-only root filesystem, all capabilities
+  dropped, `RuntimeDefault` seccomp, and a PodDisruptionBudget so a node drain evicts
+  one pod at a time.
+
+CI renders both overlays and validates them with `kubeconform` against Kubernetes 1.30,
+and checks the Compose file with `docker compose config`.
 
 ### Configuration
 

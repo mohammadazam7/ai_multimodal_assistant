@@ -14,7 +14,7 @@ Each milestone lands as a reviewed pull request with tests. Checked items are do
       live box overlay on canvas, multi-camera grid, latency and FPS readouts.
 - [x] **M4 · Observability.** Prometheus metrics (latency histograms, batch size, queue
       depth, dropped frames), structured JSON logs, `/readyz` vs `/healthz`.
-- [ ] **M5 · Kubernetes.** Manifests with Kustomize overlays (CPU and GPU), resource
+- [x] **M5 · Kubernetes.** Manifests with Kustomize overlays (CPU and GPU), resource
       requests/limits, readiness probes, HorizontalPodAutoscaler on CPU and on a custom
       in-flight-streams metric, docker-compose for local dev.
 - [ ] **M6 · Benchmarks.** `bench/` harness that replays video files as N concurrent
