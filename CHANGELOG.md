@@ -26,6 +26,13 @@ All notable changes to this project are listed here. The format follows
   open/close logs.
 - `/readyz` readiness endpoint that returns `503` with the failing checks while the
   model is not loaded, the batcher is stopped or the service is draining.
+- Kubernetes manifests in `deploy/k8s`: a Kustomize base (Deployment with startup,
+  readiness and liveness probes, Service, PodDisruptionBudget) and CPU and GPU overlays
+  with their own resources, config and HorizontalPodAutoscaler. The CPU HPA scales on
+  CPU and on open streams; the GPU HPA on open streams, read through prometheus-adapter.
+- `docker-compose.yml` for local development: API, web client with hot reload and
+  Prometheus.
+- CI renders and validates both overlays with kubeconform and checks the Compose file.
 
 ### Changed
 
@@ -33,6 +40,8 @@ All notable changes to this project are listed here. The format follows
 - `inference_ms` now includes the time a frame waits for its batch.
 - `/healthz` is now a pure liveness check; its `ready` field reflects the `/readyz`
   checks. The Docker health check uses `/readyz`.
+- The Docker image downloads weights into a writable `/models` directory and picks the
+  PyTorch wheel index from the `TORCH_INDEX` build argument (CPU by default).
 
 ### Removed
 

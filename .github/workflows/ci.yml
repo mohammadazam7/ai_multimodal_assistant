@@ -55,6 +55,27 @@ jobs:
       - run: npm test
       - run: npx vite build
 
+  manifests:
+    name: Kubernetes manifests
+    runs-on: ubuntu-latest
+    env:
+      KUBECONFORM_VERSION: v0.6.7
+    steps:
+      - uses: actions/checkout@v7
+      - name: Install kubeconform
+        run: |
+          curl -sSfL "https://github.com/yannh/kubeconform/releases/download/${KUBECONFORM_VERSION}/kubeconform-linux-amd64.tar.gz" \
+            | tar -xz -C /usr/local/bin kubeconform
+      - name: Render and validate each overlay
+        run: |
+          for overlay in deploy/k8s/overlays/*/; do
+            echo "::group::${overlay}"
+            kubectl kustomize "${overlay}" | kubeconform -strict -summary -kubernetes-version 1.30.0
+            echo "::endgroup::"
+          done
+      - name: Validate the compose file
+        run: docker compose config --quiet
+
   docker:
     name: Docker image builds
     runs-on: ubuntu-latest

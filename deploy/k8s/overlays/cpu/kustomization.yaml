@@ -1,0 +1,36 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# CPU nodes. One pod uses roughly two cores at full batch, so it scales out on CPU.
+namespace: vision
+
+resources:
+  - namespace.yaml
+  - ../../base
+  - hpa.yaml
+
+images:
+  - name: vision-service
+    newName: ghcr.io/mohammadazam7/vision-service
+    newTag: cpu
+
+configMapGenerator:
+  - name: vision-config
+    behavior: merge
+    literals:
+      - VISION_DEVICE=cpu
+
+patches:
+  - target:
+      kind: Deployment
+      name: vision-service
+    patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/resources
+        value:
+          requests:
+            cpu: "2"
+            memory: 1Gi
+          limits:
+            cpu: "4"
+            memory: 2Gi

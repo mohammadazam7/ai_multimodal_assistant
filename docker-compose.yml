@@ -1,0 +1,64 @@
+# Local development stack: the API, the web client with hot reload, and Prometheus.
+#
+#   docker compose up --build
+#
+# API http://localhost:8000, client http://localhost:5173, Prometheus http://localhost:9090.
+# Set VISION_DETECTOR=null to start without downloading model weights.
+
+name: vision
+
+services:
+  api:
+    build: ./backend
+    environment:
+      VISION_DETECTOR: ${VISION_DETECTOR:-yolo}
+      VISION_DEVICE: cpu
+      VISION_LOG_FORMAT: ${VISION_LOG_FORMAT:-text}
+    ports:
+      - "8000:8000"
+    volumes:
+      - models:/models
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://localhost:8000/readyz')"
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      # First start downloads the weights.
+      start_period: 120s
+
+  web:
+    image: node:22-alpine
+    working_dir: /app
+    command: sh -c "npm ci && npm run dev -- --host 0.0.0.0"
+    environment:
+      VITE_API_PROXY: http://api:8000
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      # Keep the container's node_modules out of the bind mount, so it never mixes with
+      # one installed on the host for a different platform.
+      - web-node-modules:/app/node_modules
+    depends_on:
+      api:
+        condition: service_healthy
+
+  prometheus:
+    image: prom/prometheus:v3.5.0
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.retention.time=2d
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./deploy/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    depends_on:
+      - api
+
+volumes:
+  models:
+  web-node-modules:

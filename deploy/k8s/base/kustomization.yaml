@@ -1,0 +1,25 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Shared by every overlay. Overlays pick the image, the hardware and the scaling policy.
+labels:
+  - pairs:
+      app.kubernetes.io/name: vision-service
+      app.kubernetes.io/part-of: vision
+    includeSelectors: true
+
+resources:
+  - deployment.yaml
+  - service.yaml
+  - pdb.yaml
+
+# Generated so the name carries a content hash: changing a setting rolls the pods.
+configMapGenerator:
+  - name: vision-config
+    literals:
+      - VISION_DETECTOR=yolo
+      - VISION_DEVICE=auto
+      - VISION_LOG_FORMAT=json
+      - VISION_LOG_LEVEL=INFO
+      - VISION_BATCH_MAX_SIZE=8
+      - VISION_BATCH_MAX_WAIT_MS=5
