@@ -24,7 +24,7 @@ flowchart LR
       CAM[Webcam / RTSP] --> UI[React client<br/>canvas overlay]
     end
     UI -- frames over WebSocket --> API[FastAPI<br/>/v1/stream, /v1/detect]
-    API --> B[Micro-batcher<br/>N streams → 1 batch]
+    API --> B[Micro-batcher<br/>N streams -> 1 batch]
     B --> M[YOLO<br/>FP16 on CUDA]
     M -- boxes --> API -- JSON --> UI
     subgraph Kubernetes
@@ -39,9 +39,9 @@ flowchart LR
 
 | Method | Path | Body | Returns |
 |---|---|---|---|
-| `GET` | `/healthz` | – | liveness: model, device, readiness flag (always `200`) |
-| `GET` | `/readyz` | – | readiness checks; `503` when the service should not get traffic |
-| `GET` | `/metrics` | – | Prometheus metrics |
+| `GET` | `/healthz` | none | liveness: model, device, readiness flag (always `200`) |
+| `GET` | `/readyz` | none | readiness checks; `503` when the service should not get traffic |
+| `GET` | `/metrics` | none | Prometheus metrics |
 | `POST` | `/v1/detect` | `multipart/form-data` with `file` | detections + timings |
 | `POST` | `/v1/detect/base64` | `{"image": "data:image/jpeg;base64,..."}` | detections + timings |
 | `WS` | `/v1/stream` | one binary message (JPEG/PNG) per frame | one JSON result per processed frame |
@@ -61,7 +61,7 @@ Example response:
 ```
 
 Each response reports `inference_ms` (batch wait + forward pass) and `total_ms`
-(decode → batch → inference → post-processing), so latency can be measured from the
+(decode -> batch -> inference -> post-processing), so latency can be measured from the
 client without extra tooling. Interactive docs are served at `/docs`.
 
 ### Live streams
@@ -142,8 +142,8 @@ Manifests live in `deploy/k8s` as a Kustomize base with two overlays:
 
 | Overlay | Image tag | Node | Scales on |
 |---|---|---|---|
-| `overlays/cpu` | `cpu` | any; requests 2 cores, limit 4 | CPU at 70 % or 4 open streams per pod, 1–8 pods |
-| `overlays/gpu` | `gpu` | NVIDIA GPU with the device plugin, one GPU per pod | 16 open streams per pod, 1–4 pods |
+| `overlays/cpu` | `cpu` | any; requests 2 cores, limit 4 | CPU at 70 % or 4 open streams per pod, 1-8 pods |
+| `overlays/gpu` | `gpu` | NVIDIA GPU with the device plugin, one GPU per pod | 16 open streams per pod, 1-4 pods |
 
 ```bash
 # images: the CPU wheel index is the default, pass the CUDA one for the GPU tag
@@ -203,7 +203,7 @@ and checks the Compose file with `docker compose config`.
 
 | Metric | Type | What it shows |
 |---|---|---|
-| `vision_detect_seconds{source}` | histogram | frame received → detections ready, decode included; `source` is `http` or `stream` |
+| `vision_detect_seconds{source}` | histogram | frame received -> detections ready, decode included; `source` is `http` or `stream` |
 | `vision_inference_seconds` | histogram | one forward pass over a batch |
 | `vision_batch_size` | histogram | frames per forward pass |
 | `vision_batch_queue_depth` | gauge | frames waiting for the batcher, read at scrape time |
