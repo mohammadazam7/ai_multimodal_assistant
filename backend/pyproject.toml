@@ -30,6 +30,8 @@ include = ["app*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+# bench/ is a tool, not part of the installed service package.
+pythonpath = ["."]
 addopts = "-ra"
 
 [tool.ruff]
