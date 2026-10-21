@@ -1,0 +1,173 @@
+{
+  "machine": {
+    "platform": "Linux-6.18.44-fc-v139-x86_64-with-glibc2.39",
+    "processor": "Intel(R) Xeon(R) Processor @ 2.10GHz",
+    "cpus": 2,
+    "python": "3.13.16"
+  },
+  "params": {
+    "fps": 5.0,
+    "seconds": 30.0,
+    "warmup": 5.0,
+    "source": "vtest.avi (OpenCV sample clip, 768x576, resized to 640 wide)",
+    "width": 640,
+    "configs": {
+      "batched": {
+        "VISION_DETECTOR": "yolo",
+        "VISION_DEVICE": "cpu",
+        "VISION_BATCH_MAX_SIZE": "8"
+      },
+      "unbatched": {
+        "VISION_DETECTOR": "yolo",
+        "VISION_DEVICE": "cpu",
+        "VISION_BATCH_MAX_SIZE": "1"
+      }
+    }
+  },
+  "runs": [
+    {
+      "config": "batched",
+      "streams": 1,
+      "seconds": 30.004195944000003,
+      "frames_sent": 150,
+      "frames_answered": 150,
+      "frames_dropped": 0,
+      "latency": {
+        "count": 150,
+        "mean_ms": 107.79894527333302,
+        "p50_ms": 103.83544399996936,
+        "p95_ms": 131.15827420003825,
+        "p99_ms": 139.60950407000837,
+        "max_ms": 151.09140200002003
+      },
+      "throughput_fps": 4.999300773797133
+    },
+    {
+      "config": "batched",
+      "streams": 2,
+      "seconds": 30.050485056999833,
+      "frames_sent": 300,
+      "frames_answered": 298,
+      "frames_dropped": 2,
+      "latency": {
+        "count": 298,
+        "mean_ms": 270.0921418791849,
+        "p50_ms": 262.2119965000138,
+        "p95_ms": 364.9570719499479,
+        "p99_ms": 400.21659596989133,
+        "max_ms": 406.8789939999533
+      },
+      "throughput_fps": 9.91664525330466
+    },
+    {
+      "config": "batched",
+      "streams": 4,
+      "seconds": 30.199354302000074,
+      "frames_sent": 600,
+      "frames_answered": 332,
+      "frames_dropped": 268,
+      "latency": {
+        "count": 332,
+        "mean_ms": 474.90870579518327,
+        "p50_ms": 474.8555095000029,
+        "p95_ms": 576.6938230999244,
+        "p99_ms": 605.0364434599715,
+        "max_ms": 636.06262899998
+      },
+      "throughput_fps": 10.99361253488827
+    },
+    {
+      "config": "batched",
+      "streams": 8,
+      "seconds": 30.94386960299994,
+      "frames_sent": 1200,
+      "frames_answered": 352,
+      "frames_dropped": 848,
+      "latency": {
+        "count": 352,
+        "mean_ms": 805.7853795283986,
+        "p50_ms": 806.2168180001663,
+        "p95_ms": 919.4173456499584,
+        "p99_ms": 1044.671672560043,
+        "max_ms": 1137.6014009999835
+      },
+      "throughput_fps": 11.375435733023977
+    },
+    {
+      "config": "unbatched",
+      "streams": 1,
+      "seconds": 30.005681800000048,
+      "frames_sent": 150,
+      "frames_answered": 150,
+      "frames_dropped": 0,
+      "latency": {
+        "count": 150,
+        "mean_ms": 98.58954663999612,
+        "p50_ms": 96.70737349995306,
+        "p95_ms": 112.30769274995966,
+        "p99_ms": 124.64972525004211,
+        "max_ms": 136.77294200010692
+      },
+      "throughput_fps": 4.999053212648538
+    },
+    {
+      "config": "unbatched",
+      "streams": 2,
+      "seconds": 30.021407800000134,
+      "frames_sent": 300,
+      "frames_answered": 300,
+      "frames_dropped": 0,
+      "latency": {
+        "count": 300,
+        "mean_ms": 159.6336849266777,
+        "p50_ms": 177.45252100007747,
+        "p95_ms": 255.03917490009385,
+        "p99_ms": 351.7052587700868,
+        "max_ms": 393.1586440000956
+      },
+      "throughput_fps": 9.99286915518994
+    },
+    {
+      "config": "unbatched",
+      "streams": 4,
+      "seconds": 30.49020997899993,
+      "frames_sent": 600,
+      "frames_answered": 327,
+      "frames_dropped": 273,
+      "latency": {
+        "count": 327,
+        "mean_ms": 469.73035789602676,
+        "p50_ms": 471.62323300017306,
+        "p95_ms": 564.9907645000667,
+        "p99_ms": 585.4991047800422,
+        "max_ms": 684.7005309998622
+      },
+      "throughput_fps": 10.724753952997391
+    },
+    {
+      "config": "unbatched",
+      "streams": 8,
+      "seconds": 31.21140644100001,
+      "frames_sent": 1200,
+      "frames_answered": 331,
+      "frames_dropped": 869,
+      "latency": {
+        "count": 331,
+        "mean_ms": 850.9664522054336,
+        "p50_ms": 857.2923210001591,
+        "p95_ms": 984.8245979999319,
+        "p99_ms": 1111.0429940999202,
+        "max_ms": 1404.6465579999676
+      },
+      "throughput_fps": 10.605097230261014
+    }
+  ],
+  "service": {
+    "model": "yolov8n.pt",
+    "torch": "2.14.1",
+    "ultralytics": "8.4.183",
+    "device": "cpu",
+    "fp16": false
+  },
+  "notes": "Client and service on the same 2-vCPU VM. One 30 s run per row."
+}
