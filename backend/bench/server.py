@@ -70,8 +70,12 @@ def serve(config: ServiceConfig, startup_timeout: float = 180.0) -> Iterator[str
     """Run the service with ``config`` and yield its ``/v1/stream`` WebSocket URL."""
     port = free_port()
     env = {**os.environ, "VISION_LOG_LEVEL": "WARNING", **config.env}
-    command = [sys.executable, "-m", "uvicorn", "app.main:app", "--port", str(port)]
-    process = subprocess.Popen(command, cwd=BACKEND, env=env)
+    command = [
+        *(sys.executable, "-m", "uvicorn", "app.main:app", "--port", str(port)),
+        *("--log-level", "warning", "--no-access-log"),
+    ]
+    # The service's logs go to stderr so stdout carries only the results.
+    process = subprocess.Popen(command, cwd=BACKEND, env=env, stdout=sys.stderr)
     try:
         wait_ready(f"http://127.0.0.1:{port}", startup_timeout, process)
         yield f"ws://127.0.0.1:{port}/v1/stream"
