@@ -33,6 +33,9 @@ flowchart LR
     HPA[HPA] -. scales .-> API
 ```
 
+[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) walks through the life of a stream frame,
+the back-pressure and batching design, failure behaviour and known limitations.
+
 ## API
 
 | Method | Path | Body | Returns |
