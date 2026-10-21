@@ -13,8 +13,8 @@ service is built to batch frames from many cameras into one forward pass and sca
 on Kubernetes.
 
 > **Status:** under active development. The detection service, multi-stream batching,
-> the web client, observability and the Kubernetes deployment are done; see the
-> [roadmap](docs/ROADMAP.md) for benchmarks.
+> the web client, observability, the Kubernetes deployment and the benchmark harness
+> are done; see the [roadmap](docs/ROADMAP.md) for the v1.0 release.
 
 ## Architecture
 
@@ -247,6 +247,32 @@ service is shutting down, so traffic is moved away without a restart.
 ```json
 {"ready": true, "checks": {"model_loaded": true, "batcher_running": true, "not_draining": true}}
 ```
+
+## Benchmarks
+
+`python -m bench` (in `backend/`) replays a video as N concurrent cameras over
+`/v1/stream`, at a fixed frame rate per camera, and reports p50/p95/p99 latency,
+throughput and dropped frames. With `--serve` it starts the service once per
+configuration, so batching or FP16 on and off can be compared in one command:
+
+```bash
+python -m bench --serve batched:BATCH_MAX_SIZE=8 --serve unbatched:BATCH_MAX_SIZE=1 \
+  --streams 1 2 4 8 --fps 5 --video clip.mp4 --markdown results.md
+```
+
+Measured so far, on a 2-vCPU cloud VM without a GPU (YOLOv8n, FP32, 5 fps per camera):
+
+| streams | batched fps | batched p50 / p95 (ms) | unbatched fps | unbatched p50 / p95 (ms) |
+|---:|---:|---:|---:|---:|
+| 1 | 5.0 | 104 / 131 | 5.0 | 97 / 112 |
+| 2 | 9.9 | 262 / 365 | 10.0 | 178 / 255 |
+| 4 | 11.0 | 475 / 577 | 10.7 | 472 / 565 |
+| 8 | 11.4 | 806 / 919 | 10.6 | 857 / 985 |
+
+The CPU saturates at about 11 frames per second; past that the service drops stale
+frames rather than queueing them, so latency stays bounded. Batching makes little
+difference on CPU. GPU and FP16 numbers are not published because they have not been
+measured. Method, caveats and the raw data are in [docs/BENCHMARKS.md](docs/BENCHMARKS.md).
 
 ## Design notes
 

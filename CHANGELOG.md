@@ -33,6 +33,11 @@ All notable changes to this project are listed here. The format follows
 - `docker-compose.yml` for local development: API, web client with hot reload and
   Prometheus.
 - CI renders and validates both overlays with kubeconform and checks the Compose file.
+- Benchmark harness, `python -m bench`: replays a video (or generated frames) as N
+  open-loop WebSocket cameras, reports p50/p95/p99 latency, throughput and dropped
+  frames as Markdown and JSON, and can start the service once per `VISION_*`
+  configuration to compare settings.
+- First published benchmark (YOLOv8n, CPU, 2 vCPU) in `docs/BENCHMARKS.md`.
 
 ### Changed
 
