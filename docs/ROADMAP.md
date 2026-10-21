@@ -17,7 +17,7 @@ Each milestone lands as a reviewed pull request with tests. Checked items are do
 - [x] **M5 · Kubernetes.** Manifests with Kustomize overlays (CPU and GPU), resource
       requests/limits, readiness probes, HorizontalPodAutoscaler on CPU and on a custom
       in-flight-streams metric, docker-compose for local dev.
-- [ ] **M6 · Benchmarks.** `bench/` harness that replays video files as N concurrent
+- [x] **M6 · Benchmarks.** `bench/` harness that replays video files as N concurrent
       streams and reports p50/p95 latency and throughput with batching and FP16 on vs.
       off. Results published with the hardware they were measured on.
 - [ ] **M7 · v1.0.** Architecture docs, demo GIF, CHANGELOG, release.
