@@ -3,9 +3,7 @@
 [![CI](https://github.com/mohammadazam7/ai_multimodal_assistant/actions/workflows/ci.yml/badge.svg)](https://github.com/mohammadazam7/ai_multimodal_assistant/actions/workflows/ci.yml)
 ![Python](https://img.shields.io/badge/python-3.11%20|%203.12-3776AB?logo=python&logoColor=white)
 ![FastAPI](https://img.shields.io/badge/FastAPI-009688?logo=fastapi&logoColor=white)
-![PyTorch](https://img.shields.io/badge/PyTorch-EE4C2C?logo=pytorch&logoColor=white)
 ![Kubernetes](https://img.shields.io/badge/Kubernetes-326CE5?logo=kubernetes&logoColor=white)
-[![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
 Real-time object detection on live camera feeds. A FastAPI service runs a YOLO model
 (FP16 on GPU), a React client streams webcam frames and draws the detections, and the
@@ -24,7 +22,7 @@ flowchart LR
       CAM[Webcam / RTSP] --> UI[React client<br/>canvas overlay]
     end
     UI -- frames over WebSocket --> API[FastAPI<br/>/v1/stream, /v1/detect]
-    API --> B[Micro-batcher<br/>N streams -> 1 batch]
+    API --> B[Micro-batcher<br/>N streams, 1 batch]
     B --> M[YOLO<br/>FP16 on CUDA]
     M -- boxes --> API -- JSON --> UI
     subgraph Kubernetes
@@ -61,7 +59,7 @@ Example response:
 ```
 
 Each response reports `inference_ms` (batch wait + forward pass) and `total_ms`
-(decode -> batch -> inference -> post-processing), so latency can be measured from the
+(decode, batch wait, inference and post-processing), so latency can be measured from the
 client without extra tooling. Interactive docs are served at `/docs`.
 
 ### Live streams
@@ -203,7 +201,7 @@ and checks the Compose file with `docker compose config`.
 
 | Metric | Type | What it shows |
 |---|---|---|
-| `vision_detect_seconds{source}` | histogram | frame received -> detections ready, decode included; `source` is `http` or `stream` |
+| `vision_detect_seconds{source}` | histogram | from frame received to detections ready, decode included; `source` is `http` or `stream` |
 | `vision_inference_seconds` | histogram | one forward pass over a batch |
 | `vision_batch_size` | histogram | frames per forward pass |
 | `vision_batch_queue_depth` | gauge | frames waiting for the batcher, read at scrape time |
