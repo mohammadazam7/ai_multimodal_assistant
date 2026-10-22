@@ -16,6 +16,9 @@ on Kubernetes.
 
 ## Architecture
 
+Components, the life of a frame and the design trade-offs are described in
+[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+
 ```mermaid
 flowchart LR
     subgraph Browser
