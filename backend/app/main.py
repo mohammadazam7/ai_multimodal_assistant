@@ -85,6 +85,7 @@ def create_app(settings: Settings | None = None, detector: Detector | None = Non
             observer=metrics,
         )
         metrics.track_queue_depth(lambda: batcher.queue_depth)
+        metrics.set_build_info(__version__, det.name, det.device)
         app.state.detector = det
         app.state.batcher = batcher
         app.state.draining = False

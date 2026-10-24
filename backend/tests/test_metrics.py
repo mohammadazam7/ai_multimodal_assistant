@@ -127,3 +127,23 @@ def test_stream_metrics_track_open_streams_and_drops() -> None:
     assert sample(m, "vision_stream_frames_dropped_total") == 2
     assert sample(m, "vision_frames_total", {"source": "stream", "outcome": "ok"}) == 2
     assert sample(m, "vision_detect_seconds_count", {"source": "stream"}) == 2
+
+
+def test_build_info_has_one_series_with_the_latest_labels() -> None:
+    m = Metrics()
+    m.set_build_info("1.0.0", "yolov8n.pt", "cpu")
+    m.set_build_info("1.0.0", "yolov8n.pt (fp16)", "cuda:0")
+
+    latest = {"version": "1.0.0", "model": "yolov8n.pt (fp16)", "device": "cuda:0"}
+    replaced = {"version": "1.0.0", "model": "yolov8n.pt", "device": "cpu"}
+    assert sample(m, "vision_build_info", latest) == 1
+    assert m.registry.get_sample_value("vision_build_info", replaced) is None
+
+
+def test_app_exports_build_info_for_its_detector() -> None:
+    from app import __version__
+
+    with TestClient(create_app(Settings(), detector=FakeDetector())) as client:
+        body = client.get("/metrics").text
+
+    assert f'vision_build_info{{device="cpu",model="fake",version="{__version__}"}} 1.0' in body

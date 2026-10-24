@@ -212,6 +212,7 @@ and checks the Compose file with `docker compose config`.
 | `vision_frames_total{source,outcome}` | counter | frames handled, `outcome` is `ok` or `invalid` |
 | `vision_stream_frames_dropped_total` | counter | stream frames replaced by a newer one before inference |
 | `vision_streams_in_flight` | gauge | open WebSocket streams |
+| `vision_build_info` | gauge | always 1; labels `version`, `model`, `device` |
 
 Useful queries:
 
