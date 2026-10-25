@@ -197,6 +197,7 @@ and checks the Compose file with `docker compose config`.
 | `VISION_BATCH_MAX_WAIT_MS` | `5` | longest a frame waits for others to join its batch |
 | `VISION_LOG_LEVEL` | `INFO` | root log level |
 | `VISION_LOG_FORMAT` | `json` | `json` (one object per line) or `text` |
+| `VISION_CORS_ORIGINS` | `["http://localhost:3000","http://localhost:5173"]` | JSON list of origins allowed to call the API from a browser |
 
 ## Observability
 
