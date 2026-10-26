@@ -307,8 +307,17 @@ measured. Method, caveats and the raw data are in [docs/BENCHMARKS.md](docs/BENC
 ```bash
 cd backend
 pip install -e ".[dev]"
-ruff check . && ruff format --check . && mypy app && pytest
+ruff check . && ruff format --check . && mypy app bench tools && pytest
 ```
+
+### Releasing
+
+A release is a commit on `main` that moves the `Unreleased` CHANGELOG entries under a
+`## [X.Y.Z] - YYYY-MM-DD` heading and sets the same version in `backend/pyproject.toml`
+and `backend/app/__init__.py`; `tests/test_version.py` fails if any of the three
+disagree. Pushing the tag `vX.Y.Z` runs `.github/workflows/release.yml`, which checks the
+tag against the declared version and publishes a GitHub release whose notes are that
+CHANGELOG section, printed by `python -m tools.release_notes X.Y.Z`.
 
 ## License
 
