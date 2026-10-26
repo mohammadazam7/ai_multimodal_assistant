@@ -33,7 +33,7 @@ jobs:
       - run: pip install -e ".[dev]"
       - run: ruff check .
       - run: ruff format --check .
-      - run: mypy app bench
+      - run: mypy app bench tools
       - run: pytest --cov=app --cov-report=term-missing
 
   frontend:
