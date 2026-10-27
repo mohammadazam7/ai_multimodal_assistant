@@ -300,6 +300,19 @@ measured. Method, caveats and the raw data are in [docs/BENCHMARKS.md](docs/BENC
 - **Fail loudly on bad input.** Non-images return `415`, bad base64 returns `422`, and
   oversized uploads return `413`, instead of a `200` with an error string.
 
+## Limitations
+
+- Performance is measured on CPU only (2 vCPU). GPU and FP16 latency, and the HPA
+  targets in the GPU overlay, have not been measured.
+- One model per process. Serving several models needs one batcher per model and a
+  routing field in the API.
+- No authentication or rate limiting; the service is meant to run behind an ingress or
+  API gateway that provides both.
+- Frames travel as individual JPEGs over WebSocket. A video codec would use less
+  bandwidth at the cost of server-side decode work.
+
+The [architecture document](docs/ARCHITECTURE.md#limitations) discusses each of these.
+
 ## Development
 
 ```bash
