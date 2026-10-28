@@ -20,4 +20,4 @@ Each milestone lands as a reviewed pull request with tests. Checked items are do
 - [x] **M6 · Benchmarks.** `bench/` harness that replays video files as N concurrent
       streams and reports p50/p95 latency and throughput with batching and FP16 on vs.
       off. Results published with the hardware they were measured on.
-- [ ] **M7 · v1.0.** Architecture docs, CHANGELOG, tagged release with release notes.
+- [x] **M7 · v1.0.** Architecture docs, CHANGELOG, tagged release with release notes.

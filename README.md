@@ -10,9 +10,8 @@ Real-time object detection on live camera feeds. A FastAPI service runs a YOLO m
 service is built to batch frames from many cameras into one forward pass and scale out
 on Kubernetes.
 
-> **Status:** under active development. The detection service, multi-stream batching,
-> the web client, observability, the Kubernetes deployment and the benchmark harness
-> are done; see the [roadmap](docs/ROADMAP.md) for the v1.0 release.
+> **Status:** v1.0.0. The [CHANGELOG](CHANGELOG.md) lists what each release contains
+> and the [roadmap](docs/ROADMAP.md) records the milestones that led to it.
 
 ## Architecture
 
