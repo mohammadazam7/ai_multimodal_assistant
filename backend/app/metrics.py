@@ -7,6 +7,10 @@ refuses to register the same metric name twice.
 Latency buckets are in seconds and skewed towards the 5-200 ms range a live overlay
 cares about; the top buckets are there so a stalled model still shows up as a tail
 rather than vanishing into ``+Inf``.
+
+``vision_build_info`` follows the Prometheus ``*_info`` convention: a gauge fixed at 1
+whose labels carry the service version, model and device, so dashboards and alerts can
+join on them (``... * on(instance) group_left(version) vision_build_info``).
 """
 
 from __future__ import annotations
@@ -78,6 +82,17 @@ class Metrics:
             "Open WebSocket streams.",
             registry=r,
         )
+        self.build_info = Gauge(
+            "vision_build_info",
+            "Always 1; the labels identify the running service and model.",
+            ["version", "model", "device"],
+            registry=r,
+        )
+
+    def set_build_info(self, version: str, model: str, device: str) -> None:
+        """Export the build labels. Replaces any earlier set, so there is one series."""
+        self.build_info.clear()
+        self.build_info.labels(version, model, device).set(1)
 
     def observe_frame(self, source: str, seconds: float) -> None:
         self.frames.labels(source, "ok").inc()

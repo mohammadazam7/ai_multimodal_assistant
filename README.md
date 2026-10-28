@@ -197,6 +197,7 @@ and checks the Compose file with `docker compose config`.
 | `VISION_BATCH_MAX_WAIT_MS` | `5` | longest a frame waits for others to join its batch |
 | `VISION_LOG_LEVEL` | `INFO` | root log level |
 | `VISION_LOG_FORMAT` | `json` | `json` (one object per line) or `text` |
+| `VISION_CORS_ORIGINS` | `["http://localhost:3000","http://localhost:5173"]` | JSON list of origins allowed to call the API from a browser |
 
 ## Observability
 
@@ -212,6 +213,7 @@ and checks the Compose file with `docker compose config`.
 | `vision_frames_total{source,outcome}` | counter | frames handled, `outcome` is `ok` or `invalid` |
 | `vision_stream_frames_dropped_total` | counter | stream frames replaced by a newer one before inference |
 | `vision_streams_in_flight` | gauge | open WebSocket streams |
+| `vision_build_info` | gauge | always 1; labels `version`, `model`, `device` |
 
 Useful queries:
 
@@ -300,13 +302,35 @@ measured. Method, caveats and the raw data are in [docs/BENCHMARKS.md](docs/BENC
 - **Fail loudly on bad input.** Non-images return `415`, bad base64 returns `422`, and
   oversized uploads return `413`, instead of a `200` with an error string.
 
+## Limitations
+
+- Performance is measured on CPU only (2 vCPU). GPU and FP16 latency, and the HPA
+  targets in the GPU overlay, have not been measured.
+- One model per process. Serving several models needs one batcher per model and a
+  routing field in the API.
+- No authentication or rate limiting; the service is meant to run behind an ingress or
+  API gateway that provides both.
+- Frames travel as individual JPEGs over WebSocket. A video codec would use less
+  bandwidth at the cost of server-side decode work.
+
+The [architecture document](docs/ARCHITECTURE.md#limitations) discusses each of these.
+
 ## Development
 
 ```bash
 cd backend
 pip install -e ".[dev]"
-ruff check . && ruff format --check . && mypy app && pytest
+ruff check . && ruff format --check . && mypy app bench tools && pytest
 ```
+
+### Releasing
+
+A release is a commit on `main` that moves the `Unreleased` CHANGELOG entries under a
+`## [X.Y.Z] - YYYY-MM-DD` heading and sets the same version in `backend/pyproject.toml`
+and `backend/app/__init__.py`; `tests/test_version.py` fails if any of the three
+disagree. Pushing the tag `vX.Y.Z` runs `.github/workflows/release.yml`, which checks the
+tag against the declared version and publishes a GitHub release whose notes are that
+CHANGELOG section, printed by `python -m tools.release_notes X.Y.Z`.
 
 ## License
 

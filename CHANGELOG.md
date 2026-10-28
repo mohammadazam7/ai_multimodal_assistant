@@ -38,6 +38,16 @@ All notable changes to this project are listed here. The format follows
   frames as Markdown and JSON, and can start the service once per `VISION_*`
   configuration to compare settings.
 - First published benchmark (YOLOv8n, CPU, 2 vCPU) in `docs/BENCHMARKS.md`.
+- `vision_build_info` gauge whose `version`, `model` and `device` labels identify the
+  running service, following the Prometheus `*_info` convention.
+- Architecture document (`docs/ARCHITECTURE.md`) covering components, the life of a
+  stream frame, design trade-offs and limitations; README Limitations section.
+- Release workflow: pushing a `vX.Y.Z` tag checks it against the declared version and
+  publishes a GitHub release whose notes are the matching CHANGELOG section, extracted
+  by `python -m tools.release_notes`. Tests keep `pyproject.toml`, `app.__version__`
+  and the CHANGELOG in agreement.
+- CI checks that relative links in the Markdown docs resolve, and that every
+  `VISION_*` setting is documented in the README configuration table.
 
 ### Changed
 
