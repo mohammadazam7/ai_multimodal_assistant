@@ -13,6 +13,26 @@ on Kubernetes.
 > **Status:** v1.0.0. The [CHANGELOG](CHANGELOG.md) lists what each release contains
 > and the [roadmap](docs/ROADMAP.md) records the milestones that led to it.
 
+## Demo
+
+[![The web client with live detections on four streams](docs/demo/demo.png)](docs/demo/demo.mp4)
+
+A one-minute recording of the web client (click the image for the video). One camera
+stream is added, then more, up to four, then two are removed; every tile shows its own
+FPS, p50 and p95 round trip, server time and dropped frames.
+
+How it was recorded: the service ran `yolov8s.pt` on a 2-vCPU machine with no GPU
+(`VISION_DEVICE=cpu`, `VISION_CONFIDENCE=0.65`), and Chromium's fake-camera flags fed
+it two public sample clips in place of a webcam, so every box is a real detection made
+while recording. On that CPU each forward pass takes about 250 ms, which is why the
+boxes trail fast movement and FPS falls as streams are added; the
+[benchmarks](docs/BENCHMARKS.md) measure the same effect. The model uses the COCO
+classes, which have a single table class, so desks are labelled "dining table".
+
+Footage: `vtest.avi` from the [OpenCV samples](https://github.com/opencv/opencv/tree/4.x/samples/data)
+and `classroom.mp4` from Intel's [sample-videos](https://github.com/intel-iot-devkit/sample-videos)
+([CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)), resized and cropped to 640x360.
+
 ## Architecture
 
 Components, the life of a frame and the design trade-offs are described in
