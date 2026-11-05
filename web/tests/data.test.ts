@@ -60,3 +60,21 @@ describe("derived views", () => {
     expect(grid.reduce((a, b) => a + b, 0)).toBe(countSeries(street, "person").reduce((a, p) => a + p.n, 0));
   });
 });
+
+describe("latency", () => {
+  it("keeps warm-up frames out of the histogram and the percentiles", async () => {
+    const { latencyHistogram, steadyLatency } = await import("../src/data/derive");
+    const frame = (ms: number, t: number) => ({ t, inference_ms: ms, detections: [] });
+    const session = {
+      cameras: {
+        a: { width: 4, height: 3, frames: [frame(9000, 0), frame(100, 0.25), frame(200, 0.5)] },
+        b: { width: 4, height: 3, frames: [frame(8000, 0), frame(300, 0.25)] },
+      },
+    } as unknown as import("../src/data/schema").Session;
+    const h = latencyHistogram(session, 4);
+    expect(h.warmup).toEqual([9000, 8000]);
+    expect(h.bins.reduce((n, b) => n + b.n, 0)).toBe(3);
+    expect(h.bins[0]!.from).toBe(100);
+    expect(steadyLatency(session).p50).toBe(200);
+  });
+});
