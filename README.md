@@ -33,6 +33,23 @@ Footage: `vtest.avi` from the [OpenCV samples](https://github.com/opencv/opencv/
 and `classroom.mp4` from Intel's [sample-videos](https://github.com/intel-iot-devkit/sample-videos)
 ([CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)), resized and cropped to 640x360.
 
+## Vision Control Room
+
+[![Vision Control Room: 2,578 detections from two cameras in a 3D time tunnel](docs/images/control-room.png)](https://mohammadazam7.github.io/ai_multimodal_assistant/)
+
+**[Open the live app](https://mohammadazam7.github.io/ai_multimodal_assistant/)**: an
+interactive 3D view of a recorded session. Each camera is a lane of frames receding into
+the screen and every detection is a slab at its place in the frame and its moment in time,
+coloured by label. Play or scrub the timeline, click a detection to fly to it, filter by
+label, or switch to tables when WebGL is not available.
+
+The session was recorded with `python -m tools.record_session` (in `backend/`): the same
+`yolov8s.pt` model on CPU at a 0.65 confidence threshold, 4 frames per second from the two
+sample clips above, giving 264 frames and 2,578 detections. Steady-state inference took
+190 ms at the median and 265 ms at the 95th percentile per frame; the first call, which
+also loads the model, is reported separately. The app lives in [`web/`](web/) and is
+deployed by [`pages.yml`](.github/workflows/pages.yml).
+
 ## Architecture
 
 Components, the life of a frame and the design trade-offs are described in
